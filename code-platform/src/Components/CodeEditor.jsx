@@ -19,6 +19,7 @@ int main() {
   const [testcaseResults, setTestcaseResults] = useState([]);
   const [dbTestcases, setDbTestcases] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -36,6 +37,7 @@ int main() {
   }, [id, API]);
 
   const handleSubmit = async () => {
+    setLoading(true);
     try {
       if (runCustom) {
         const response = await axios.post(`${API}/api/submit`, {
@@ -75,6 +77,8 @@ int main() {
     } catch (err) {
       console.error(err);
       setOutput("❌ Submission failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,31 +98,19 @@ int main() {
         onChange={(value) => setCode(value || "")}
       />
 
-      <label className="flex items-center mt-4 mb-2">
-        <input
-          type="checkbox"
-          checked={runCustom}
-          onChange={() => setRunCustom((prev) => !prev)}
-          className="mr-2"
-        />
-        Run Custom Input
-      </label>
-
-      {runCustom && (
-        <textarea
-          className="w-full mt-2 p-2 bg-gray-800 text-white rounded"
-          placeholder="Enter custom input (e.g., abcde ace)"
-          rows={4}
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-        />
-      )}
-
       <button
         onClick={handleSubmit}
-        className="mt-4 bg-green-500 hover:bg-green-600 px-4 py-2 rounded text-white"
+        disabled={loading}
+        className="mt-4 bg-green-500 hover:bg-green-600 px-4 py-2 rounded text-white flex items-center justify-center gap-2 disabled:opacity-50"
       >
-        Submit
+        {loading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Running...
+          </>
+        ) : (
+          "Submit"
+        )}
       </button>
 
       {output && (
@@ -131,30 +123,36 @@ int main() {
         </div>
       )}
 
-      {dbTestcases.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-xl font-semibold mb-2 text-white">
-            Sample Testcases
-          </h3>
-          <div className="space-y-2">
-            {dbTestcases.slice(0, 3).map((tc, idx) => (
-              <div
-                key={idx}
-                className="bg-gray-800 p-3 rounded shadow-sm text-sm text-gray-300"
-              >
-                <p>
-                  <strong>Input:</strong>{" "}
-                  <pre className="whitespace-pre-wrap">{tc.input}</pre>
-                </p>
-                <p>
-                  <strong>Expected Output:</strong>{" "}
-                  <span className="text-green-400">{tc.expected_output}</span>
-                </p>
+      <div className="px-2 mt-6">
+        <h2 className="text-2xl font-semibold text-white mb-4">
+          Sample Testcases
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {dbTestcases.slice(0, 3).map((tc, index) => (
+            <div
+              key={tc._id}
+              className="bg-gray-800 rounded-md p-4 text-white flex flex-col gap-4 min-h-[240px]"
+            >
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Case {index + 1}</h3>
+
+                <p className="text-sm text-gray-400 mb-1">Input:</p>
+                <pre className="bg-gray-900 rounded px-3 py-2 whitespace-pre-wrap text-sm">
+                  {tc.input}
+                </pre>
               </div>
-            ))}
-          </div>
+
+              <div>
+                <p className="text-sm text-gray-400 mb-1">Expected Output:</p>
+                <pre className="bg-gray-900 rounded px-3 py-2 text-green-400 whitespace-pre-wrap text-sm">
+                  {tc.expected_output}
+                </pre>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       {testcaseResults.length > 0 && (
         <div className="mt-8">

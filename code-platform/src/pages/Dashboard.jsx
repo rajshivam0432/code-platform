@@ -59,7 +59,7 @@ const ProblemDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white px-4 py-10 flex flex-col items-center">
+    <div className="pt-8 min-h-screen bg-gray-900 text-white px-4 py-10 flex flex-col items-center">
       <h1 className="text-3xl font-bold mb-6">Problem Dashboard</h1>
 
       <div className="w-full max-w-6xl mb-6 space-y-4">

@@ -7,21 +7,24 @@ export const getProblems = async (req, res) => {
 
 export const createProblem = async (req, res) => {
   try {
-    const { title, description, difficulty, tags, testcases } = req.body;
+    const problems = req.body; // Expecting an array of problem objects
+    if (!Array.isArray(problems)) {
+      return res.status(400).json({ error: "Expected an array of problems" });
+    }
 
-    const problem = new Problem({
-      title,
-      description,
-      difficulty,
-      tags,
-      testcases, // ✅ include this!
-    });
-
-    await problem.save();
-    res.status(201).json(problem);
+    const inserted = await Problem.insertMany(problems);
+    res
+      .status(201)
+      .json({
+        message: "Problems inserted",
+        count: inserted.length,
+        data: inserted,
+      });
   } catch (err) {
-    console.error("Error creating problem:", err);
-    res.status(500).json({ error: "Failed to create problem" });
+    console.error(err);
+    res
+      .status(500)
+      .json({ error: "Failed to insert problems", details: err.message });
   }
 };
 
