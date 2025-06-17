@@ -14,7 +14,6 @@ function App() {
       <div className="pt-16">
         <Routes>
           <Route path="/" element={<SignIn />} />
-          <Route path="/" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
 
           <Route
