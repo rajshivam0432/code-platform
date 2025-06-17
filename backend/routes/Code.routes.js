@@ -3,7 +3,7 @@ import axios  from "axios";
 const router = express.Router();
 
 const JUDGE0_URL = "https://judge0-ce.p.rapidapi.com/submissions";
-const RAPIDAPI_KEY = "6791d1718amshf31fd9ed92b299ap101760jsn491cf518db96";
+const RAPIDAPI_KEY = "59632a26f3mshd122c3a63a6765ap1ad3d5jsnb94c2cf89afb";
 
 router.post("/run", async (req, res) => {
   const { code, language_id } = req.body;
@@ -36,7 +36,6 @@ router.post("/run", async (req, res) => {
       });
 
       if (result.data.status.id <= 2) {
-        // In Queue or Processing
         setTimeout(fetchResult, 1000);
       } else {
         res.json(result.data);

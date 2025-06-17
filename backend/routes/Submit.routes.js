@@ -28,7 +28,7 @@ router.post("/", async (req, res) => {
                 "content-type": "application/json",
                 "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
                 "x-rapidapi-key":
-                  "6791d1718amshf31fd9ed92b299ap101760jsn491cf518db96",
+                  "59632a26f3mshd122c3a63a6765ap1ad3d5jsnb94c2cf89afb",
               },
             }
           );
