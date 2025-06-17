@@ -20,9 +20,11 @@ int main() {
   const [dbTestcases, setDbTestcases] = useState([]);
   const [error, setError] = useState(null);
 
+  const API = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/api/problems/${id}`)
+      .get(`${API}/api/problems/${id}`)
       .then((res) => {
         setProblem(res.data);
         setDbTestcases(res.data.testcases || []);
@@ -31,12 +33,12 @@ int main() {
       .catch(() => {
         setError("Failed to load problem.");
       });
-  }, [id]);
+  }, [id, API]);
 
   const handleSubmit = async () => {
     try {
       if (runCustom) {
-        const response = await axios.post("http://localhost:5000/api/submit", {
+        const response = await axios.post(`${API}/api/submit`, {
           source_code: code,
           language_id: 54,
           stdin: userInput,
@@ -52,7 +54,7 @@ int main() {
               }`
         );
       } else {
-        const response = await axios.post("http://localhost:5000/api/submit", {
+        const response = await axios.post(`${API}/api/submit`, {
           problemId: id,
           source_code: code,
           language_id: 54,
@@ -119,7 +121,6 @@ int main() {
         Submit
       </button>
 
-      {/* ✅ Output status */}
       {output && (
         <div
           className={`mt-6 p-4 rounded text-lg font-semibold ${
@@ -130,7 +131,6 @@ int main() {
         </div>
       )}
 
-      {/* ✅ Testcases from DB */}
       {dbTestcases.length > 0 && (
         <div className="mt-6">
           <h3 className="text-xl font-semibold mb-2 text-white">
@@ -156,7 +156,6 @@ int main() {
         </div>
       )}
 
-      {/* ✅ Results after submission */}
       {testcaseResults.length > 0 && (
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-2 text-white">

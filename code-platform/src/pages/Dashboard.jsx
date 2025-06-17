@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const ProblemDashboard = () => {
   const [problems, setProblems] = useState([]);
   const [filteredProblems, setFilteredProblems] = useState([]);
-
   const [selectedTags, setSelectedTags] = useState([]);
   const [difficultyFilter, setDifficultyFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/problems")
+      .get(import.meta.env.VITE_API_BASE_URL + "/api/problems")
       .then((res) => {
         setProblems(res.data);
         setFilteredProblems(res.data);
@@ -62,7 +62,6 @@ const ProblemDashboard = () => {
     <div className="min-h-screen bg-gray-900 text-white px-4 py-10 flex flex-col items-center">
       <h1 className="text-3xl font-bold mb-6">Problem Dashboard</h1>
 
-      {/* Filter Section */}
       <div className="w-full max-w-6xl mb-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <input
@@ -102,9 +101,21 @@ const ProblemDashboard = () => {
             </button>
           ))}
         </div>
+
+        {(selectedTags.length > 0 || difficultyFilter || searchTerm.trim()) && (
+          <button
+            onClick={() => {
+              setSelectedTags([]);
+              setDifficultyFilter("");
+              setSearchTerm("");
+            }}
+            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
-      {/* Table Section */}
       <div className="w-full max-w-6xl overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full text-sm text-left text-black">
           <thead className="bg-gray-100 text-xs uppercase text-gray-700">
@@ -120,11 +131,13 @@ const ProblemDashboard = () => {
             {filteredProblems.length > 0 ? (
               filteredProblems.map((problem) => (
                 <tr key={problem._id} className="border-b">
-                  <td className="px-6 py-4 text-blue-600 font-semibold hover:underline cursor-pointer">
+                  <td className="px-6 py-4 text-blue-600 font-semibold hover:underline">
                     {problem.title}
                   </td>
                   <td className="px-6 py-4 text-gray-700">
-                    {problem.description}
+                    {problem.description.length > 100
+                      ? problem.description.slice(0, 100) + "..."
+                      : problem.description}
                   </td>
                   <td className="px-6 py-4">
                     <span
@@ -152,14 +165,11 @@ const ProblemDashboard = () => {
                     ))}
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() =>
-                        (window.location.href = `/editor/${problem._id}`)
-                      }
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    >
-                      Solve
-                    </button>
+                    <Link to={`/editor/${problem._id}`}>
+                      <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        Solve
+                      </button>
+                    </Link>
                   </td>
                 </tr>
               ))
