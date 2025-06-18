@@ -11,35 +11,35 @@ import authRoutes from "./routes/Auth.routes.js"; // Optional if you're doing au
 
 dotenv.config();
 const app = express();
-
-// ✅ CORS Configuration
 const allowedOrigins = [
   "https://bytebattle-platform.vercel.app",
   "http://localhost:5173",
 ];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.error(" Blocked CORS request from:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
 
-// ✅ Built-in body parser middleware
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Preflight
+
+//Built-in body parser middleware
 app.use(express.json());
 
-// ✅ Connect to MongoDB
+//  Connect to MongoDB
 connectDB();
 
-// ✅ Health check
+//  Health check
 app.get("/", (req, res) => {
   res.send("🚀 API is running successfully!");
 });
