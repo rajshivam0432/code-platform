@@ -1,18 +1,19 @@
-// models/Problem.js
+// models/Problem.model.js
 import mongoose from "mongoose";
 
-const testcaseSchema = new mongoose.Schema({
-  input: String, // stdin
-  expected_output: String, // correct output
+const testCaseSchema = new mongoose.Schema({
+  input: { type: String, required: true },
+  expectedOutput: { type: String, required: true },
+  isHidden: { type: Boolean, default: false },
 });
 
-const problemSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  difficulty: String,
-  tags: [String],
-  testcases: [testcaseSchema],
-});
+const problemSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
+    testCases: [testCaseSchema],
+  },
+  { timestamps: true }
+);
 
-const Problem = mongoose.model("Problem", problemSchema);
-export default Problem;
+export default mongoose.model("Problem", problemSchema);
