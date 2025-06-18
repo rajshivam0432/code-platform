@@ -23,7 +23,8 @@ const ProblemDashboard = () => {
     filterProblems();
   }, [selectedTags, difficultyFilter, searchTerm, problems]);
 
-  const allTags = Array.from(new Set(problems.flatMap((p) => p.tags)));
+  // Safely extract all tags
+  const allTags = Array.from(new Set(problems.flatMap((p) => p.tags || [])));
 
   const toggleTag = (tag) => {
     setSelectedTags((prev) =>
@@ -36,22 +37,27 @@ const ProblemDashboard = () => {
 
     if (selectedTags.length > 0) {
       filtered = filtered.filter((problem) =>
-        selectedTags.every((tag) => problem.tags.includes(tag))
+        selectedTags.every((tag) => (problem.tags || []).includes(tag))
       );
     }
 
     if (difficultyFilter) {
       filtered = filtered.filter(
         (problem) =>
-          problem.difficulty.toLowerCase() === difficultyFilter.toLowerCase()
+          (problem.difficulty || "").toLowerCase() ===
+          difficultyFilter.toLowerCase()
       );
     }
 
     if (searchTerm.trim() !== "") {
       filtered = filtered.filter(
         (problem) =>
-          problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          problem.description.toLowerCase().includes(searchTerm.toLowerCase())
+          (problem.title || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (problem.description || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
       );
     }
 
@@ -135,7 +141,7 @@ const ProblemDashboard = () => {
                     {problem.title}
                   </td>
                   <td className="px-6 py-4 text-gray-700">
-                    {problem.description.length > 100
+                    {problem.description?.length > 100
                       ? problem.description.slice(0, 100) + "..."
                       : problem.description}
                   </td>
@@ -155,7 +161,7 @@ const ProblemDashboard = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 flex flex-wrap gap-1">
-                    {problem.tags.map((tag, idx) => (
+                    {(problem.tags || []).map((tag, idx) => (
                       <span
                         key={idx}
                         className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded"

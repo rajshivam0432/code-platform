@@ -1,198 +1,130 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import Editor from "@monaco-editor/react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useParams } from "react-router-dom";
+import MonacoEditor from "@monaco-editor/react";
 
-const CodeEditor = () => {
+const EditorPage = () => {
   const { id } = useParams();
   const [problem, setProblem] = useState(null);
-  const [code, setCode] = useState(`#include <iostream>
-using namespace std;
-
-int main() {
-    // write your code here
-    return 0;
-}`);
-  const [runCustom, setRunCustom] = useState(false);
-  const [userInput, setUserInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [testcaseResults, setTestcaseResults] = useState([]);
-  const [dbTestcases, setDbTestcases] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const API = import.meta.env.VITE_API_BASE_URL;
+  const [code, setCode] = useState("// Write your C++ code here");
+  const [result, setResult] = useState([]);
+  const [scorePercent, setScorePercent] = useState(0);
+  const [loading, setLoading] = useState(false); // ✅ New state for spinner
 
   useEffect(() => {
     axios
-      .get(`${API}/api/problems/${id}`)
-      .then((res) => {
-        setProblem(res.data);
-        setDbTestcases(res.data.testcases || []);
-        setError(null);
-      })
-      .catch(() => {
-        setError("Failed to load problem.");
-      });
-  }, [id, API]);
+      .get(`${import.meta.env.VITE_API_BASE_URL}/api/problems/${id}`)
+      .then((res) => setProblem(res.data))
+      .catch((err) => console.error(err));
+  }, [id]);
 
   const handleSubmit = async () => {
-    setLoading(true);
+    setLoading(true); // ✅ Start loading
+    setResult([]);
     try {
-      if (runCustom) {
-        const response = await axios.post(`${API}/api/submit`, {
-          source_code: code,
-          language_id: 54,
-          stdin: userInput,
-        });
-
-        const result = response.data;
-        setTestcaseResults([]);
-        setOutput(
-          result.stdout
-            ? `✅ Output:\n${result.stdout}`
-            : `❌ Error:\n${
-                result.stderr || result.compile_output || "Unknown error"
-              }`
-        );
-      } else {
-        const response = await axios.post(`${API}/api/submit`, {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/submit`,
+        {
+          code,
+          language: "cpp",
           problemId: id,
-          source_code: code,
-          language_id: 54,
-        });
-
-        const result = response.data;
-
-        if (!result || !result.allResults) {
-          setOutput("❌ No testcases were evaluated.");
-          return;
         }
-
-        setTestcaseResults(result.allResults);
-
-        const allPassed = result.allResults.every((r) => r.passed);
-        setOutput(allPassed ? "✅ Accepted" : "❌ Some testcases failed");
-      }
+      );
+      setResult(res.data.results);
+      setScorePercent(res.data.scorePercent);
     } catch (err) {
       console.error(err);
-      setOutput("❌ Submission failed. Please try again.");
     } finally {
-      setLoading(false);
+      setLoading(false); // ✅ Stop loading
     }
   };
 
-  if (error) return <div className="text-red-500 p-4">{error}</div>;
-  if (!problem) return <div className="text-white p-4">Loading...</div>;
-
-  return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <h1 className="text-3xl font-bold mb-2">{problem.title}</h1>
+  return problem ? (
+    <div className="p-4 bg-gray-900 text-white min-h-screen">
+      <h1 className="text-2xl font-bold mb-4">{problem.title}</h1>
       <p className="mb-4 text-gray-300">{problem.description}</p>
 
-      <Editor
-        height="60vh"
+      <MonacoEditor
+        height="400px"
         defaultLanguage="cpp"
         theme="vs-dark"
         value={code}
-        onChange={(value) => setCode(value || "")}
+        onChange={(value) => setCode(value)}
       />
 
       <button
         onClick={handleSubmit}
+        className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded disabled:opacity-50"
         disabled={loading}
-        className="mt-4 bg-green-500 hover:bg-green-600 px-4 py-2 rounded text-white flex items-center justify-center gap-2 disabled:opacity-50"
       >
-        {loading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            Running...
-          </>
-        ) : (
-          "Submit"
-        )}
+        {loading ? "Compiling..." : "Submit"}
       </button>
 
-      {output && (
-        <div
-          className={`mt-6 p-4 rounded text-lg font-semibold ${
-            output.includes("Accepted") ? "text-green-400" : "text-red-400"
-          }`}
-        >
-          {output}
+      {/* ✅ Show compiling bar */}
+      {loading && (
+        <div className="mt-4 w-full bg-gray-700 h-2 rounded">
+          <div
+            className="bg-yellow-400 h-2 animate-pulse rounded"
+            style={{ width: "100%" }}
+          ></div>
+          <p className="text-sm text-yellow-400 mt-1">
+            Compiling and running test cases...
+          </p>
         </div>
       )}
 
-      <div className="px-2 mt-6">
-        <h2 className="text-2xl font-semibold text-white mb-4">
-          Sample Testcases
-        </h2>
+      {!loading && result.length > 0 && (
+        <div className="mt-6 bg-gray-800 p-4 rounded">
+          <h2 className="text-xl font-semibold mb-2">
+            ✅ Score: {scorePercent}% of test cases passed
+          </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {dbTestcases.slice(0, 3).map((tc, index) => (
+          <div className="w-full bg-gray-700 h-3 rounded mb-6">
             <div
-              key={tc._id}
-              className="bg-gray-800 rounded-md p-4 text-white flex flex-col gap-4 min-h-[240px]"
-            >
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Case {index + 1}</h3>
+              className="bg-green-500 h-3 rounded"
+              style={{ width: `${scorePercent}%` }}
+            ></div>
+          </div>
 
-                <p className="text-sm text-gray-400 mb-1">Input:</p>
-                <pre className="bg-gray-900 rounded px-3 py-2 whitespace-pre-wrap text-sm">
-                  {tc.input}
-                </pre>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Expected Output:</p>
-                <pre className="bg-gray-900 rounded px-3 py-2 text-green-400 whitespace-pre-wrap text-sm">
-                  {tc.expected_output}
-                </pre>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {testcaseResults.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-2 text-white">
-            Testcase Results
-          </h3>
-          <div className="space-y-2">
-            {testcaseResults.slice(0, 3).map((tc, idx) => (
+          <div className="space-y-4">
+            {result.map((r, idx) => (
               <div
                 key={idx}
-                className="flex items-start bg-gray-800 p-3 rounded shadow-sm"
+                className="p-4 bg-gray-700 rounded flex flex-col space-y-1"
               >
-                <div
-                  className={`w-3 h-3 rounded-full mt-1 mr-3 ${
-                    tc.passed ? "bg-green-500" : "bg-red-500"
-                  }`}
-                ></div>
-                <div className="text-sm text-gray-300">
-                  <strong>Input:</strong>
-                  <pre className="whitespace-pre-wrap">{tc.input}</pre>
-                  <strong>Expected:</strong> {tc.expected} <br />
-                  <strong>Received:</strong>{" "}
+                <div className="flex justify-between items-center">
+                  <p className="font-semibold">Test Case #{idx + 1}</p>
                   <span
-                    className={tc.passed ? "text-green-400" : "text-red-400"}
+                    className={`text-sm font-semibold px-2 py-1 rounded ${
+                      r.passed ? "bg-green-600" : "bg-red-600"
+                    }`}
                   >
-                    {tc.received}
+                    {r.passed ? "Passed ✅" : "Failed ❌"}
                   </span>
                 </div>
+                <pre className="text-sm text-gray-300">
+                  <strong>Input:</strong> {r.input}
+                </pre>
+                <pre className="text-sm text-green-300">
+                  <strong>Expected:</strong> {r.expectedOutput}
+                </pre>
+                <pre className="text-sm text-blue-300">
+                  <strong>Got:</strong> {r.actualOutput}
+                </pre>
+                {r.error && (
+                  <pre className="text-sm text-red-400">
+                    <strong>Error:</strong> {r.error}
+                  </pre>
+                )}
               </div>
             ))}
-            {testcaseResults.length > 3 && (
-              <p className="text-gray-400 text-sm mt-2">
-                ...and {testcaseResults.length - 3} more testcases
-              </p>
-            )}
           </div>
         </div>
       )}
     </div>
+  ) : (
+    <p className="text-white p-4">Loading...</p>
   );
 };
 
-export default CodeEditor;
+export default EditorPage;
