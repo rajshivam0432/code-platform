@@ -13,25 +13,23 @@ dotenv.config();
 const app = express();
 
 // ✅ Allowed frontend origins
-const allowedOrigins = [
-  "https://bytebattle-platform.vercel.app",
-  "http://localhost:5173",
-];
-
-// ✅ CORS config with credentials and headers
 const corsOptions = {
   origin: function (origin, callback) {
+    const allowedOrigins = [
+      "https://bytebattle-platform.vercel.app",
+      "http://localhost:5173",
+    ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.error("❌ Blocked CORS request from:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
-  methods: "GET,POST,PUT,DELETE,OPTIONS",
-  allowedHeaders: "Content-Type,Authorization",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
+
 
 // ✅ CORS middleware
 app.use(cors(corsOptions));
