@@ -1,6 +1,6 @@
 // routes/Code.routes.js
 import express from "express";
-import { executeCppCode } from "../executeCode.js";
+import { runCppCode } from "../Services/runCppCode.js";
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.post("/run", async (req, res) => {
   }
 
   try {
-    const result = await executeCppCode(code);
+    const result = await runCppCode(code);
     res.json(result);
   } catch (err) {
     res.status(500).json(err);

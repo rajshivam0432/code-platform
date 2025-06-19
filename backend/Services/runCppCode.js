@@ -18,14 +18,20 @@ export const runCppCode = async (code, input) => {
     writeFileSync(cppFile, code);
     writeFileSync(inputFile, input);
 
-    const command = `docker run --rm -v ${TEMP_DIR}:/app -w /app gcc:latest bash -c "g++ ${jobId}.cpp -o ${jobId}.out && ./${jobId}.out < ${jobId}.in"`;
-    const output = execSync(command, { timeout: 5000 }).toString();
+    // Compile the C++ code
+    execSync(`g++ ${cppFile} -o ${execFile}`);
+
+    // Execute the compiled binary with input redirection
+    const output = execSync(`${execFile} < ${inputFile}`, {
+      timeout: 5000,
+    }).toString();
 
     return { output: output.trim(), error: null };
   } catch (error) {
     return { output: "", error: error.message };
   } finally {
-    [cppFile, inputFile, outputFile].forEach((file) => {
+    // Clean up files
+    [cppFile, inputFile, execFile].forEach((file) => {
       try {
         unlinkSync(file);
       } catch (_) {}
