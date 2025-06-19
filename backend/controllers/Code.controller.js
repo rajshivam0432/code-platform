@@ -17,7 +17,6 @@ export const submitCode = async (req, res) => {
     for (const testCase of problem.testCases) {
       const { input, expectedOutput, isHidden } = testCase;
 
-      // Skip hidden cases if it's just a "Run"
       if (!isSubmit && isHidden) continue;
 
       const { output, error } = await runCppCode(code, input);
@@ -28,7 +27,6 @@ export const submitCode = async (req, res) => {
       if (passed) passedCount++;
       totalEvaluated++;
 
-      // Show result only for non-hidden cases
       if (!isHidden) {
         results.push({
           input,
@@ -47,7 +45,7 @@ export const submitCode = async (req, res) => {
     return res.status(200).json({
       success: true,
       scorePercent,
-      results, // only public test case results
+      results, 
     });
   } catch (err) {
     return res.status(500).json({

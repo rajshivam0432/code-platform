@@ -36,16 +36,14 @@ const corsOptions = {
   ],
 };
 
-// ✅ Apply CORS middleware globally
+// Apply CORS middleware globally
 app.use(cors(corsOptions));
-
-// ✅ Body parser
 app.use(express.json());
 
-// ✅ Connect DB
+//  Connect DB
 connectDB();
 
-// ✅ Routes
+// Routes
 app.get("/", (req, res) => {
   res.send("🚀 API is running successfully!");
 });
@@ -57,5 +55,5 @@ app.use("/api/auth", authRoutes);
 // ✅ Start server
 const PORT = process.env.PORT ;
 app.listen(process.env.PORT, () => {
-  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+  console.log(`🚀 Server running on http:${PORT}`);
 });
