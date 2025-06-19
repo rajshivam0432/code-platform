@@ -55,7 +55,7 @@ app.use("/api/submit", submitRouter);
 app.use("/api/auth", authRoutes);
 
 // ✅ Start server
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, "0.0.0.0", () => {
+const PORT = process.env.PORT ;
+app.listen(process.env.PORT, () => {
   console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
 });

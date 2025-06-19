@@ -12,6 +12,7 @@ export const runCppCode = async (code, input) => {
   const cppFile = path.join(TEMP_DIR, `${jobId}.cpp`);
   const inputFile = path.join(TEMP_DIR, `${jobId}.in`);
   const outputFile = path.join(TEMP_DIR, `${jobId}.out`);
+  const execFile = path.join(TEMP_DIR, `${jobId}`);
 
   try {
     writeFileSync(cppFile, code);
