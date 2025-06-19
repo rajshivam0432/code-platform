@@ -2,43 +2,58 @@ import Problem from "../models/Problem.model.js";
 import { runCppCode } from "../Services/runCppCode.js";
 
 export const submitCode = async (req, res) => {
-  const { code, language, problemId } = req.body;
+  const { code, language, problemId, isSubmit = false } = req.body;
 
   try {
     const problem = await Problem.findById(problemId);
-    if (!problem) return res.status(404).json({ error: "Problem not found" });
+    if (!problem) {
+      return res.status(404).json({ error: "Problem not found" });
+    }
 
     const results = [];
     let passedCount = 0;
+    let totalEvaluated = 0;
 
-    for (let i = 0; i < problem.testCases.length; i++) {
-      const { input, expectedOutput, isHidden } = problem.testCases[i];
+    for (const testCase of problem.testCases) {
+      const { input, expectedOutput, isHidden } = testCase;
+
+      // Skip hidden cases if it's just a "Run"
+      if (!isSubmit && isHidden) continue;
+
       const { output, error } = await runCppCode(code, input);
+      const trimmedOutput = output.trim();
+      const trimmedExpected = expectedOutput.trim();
+      const passed = trimmedOutput === trimmedExpected;
 
-      const passed = output.trim() === expectedOutput.trim();
       if (passed) passedCount++;
+      totalEvaluated++;
 
-      // Only include non-hidden test cases in results
+      // Show result only for non-hidden cases
       if (!isHidden) {
         results.push({
           input,
-          expectedOutput,
-          actualOutput: output,
+          expectedOutput: trimmedExpected,
+          actualOutput: trimmedOutput,
           passed,
           error,
         });
       }
     }
 
-    const total = problem.testCases.length;
-    const scorePercent = Math.round((passedCount / total) * 100);
+    const scorePercent = totalEvaluated
+      ? Math.round((passedCount / totalEvaluated) * 100)
+      : 0;
 
-    res.json({
+    return res.status(200).json({
       success: true,
       scorePercent,
-      results, // Only includes visible test cases
+      results, // only public test case results
     });
   } catch (err) {
-    res.status(500).json({ error: "Server error", details: err.message });
+    return res.status(500).json({
+      success: false,
+      error: "Server error",
+      details: err.message,
+    });
   }
 };

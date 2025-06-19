@@ -8,17 +8,18 @@ import { promisify } from "util";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Use system temp directory (safer for production)
+// System temp directory
 const TEMP_DIR = path.join(os.tmpdir(), "cpp-runner");
 
-// Ensure TEMP_DIR exists
+// Ensure temp directory exists
 if (!existsSync(TEMP_DIR)) {
   mkdirSync(TEMP_DIR, { recursive: true });
 }
 
 const execAsync = promisify(exec);
 
-export const runCppCode = async (code, input) => {
+// 🛡️ Main C++ runner with timeout
+export const runCppCode = async (code, input, timeout = 3000) => {
   const jobId = uuid();
   const cppFile = path.join(TEMP_DIR, `${jobId}.cpp`);
   const inputFile = path.join(TEMP_DIR, `${jobId}.in`);
@@ -29,29 +30,32 @@ export const runCppCode = async (code, input) => {
     writeFileSync(cppFile, code);
     writeFileSync(inputFile, input);
 
-    // Compile the code
+    // Step 1: Compile the C++ code
     await execAsync(`g++ ${cppFile} -o ${execFile}`);
 
-    // Run the compiled binary with input
+    // Step 2: Execute with timeout and input redirection
     const { stdout } = await execAsync(`${execFile} < ${inputFile}`, {
-      timeout: 5000,
-      maxBuffer: 1024 * 1024, // optional
+      timeout,
+      maxBuffer: 1024 * 1024, // optional: limit to 1MB
     });
 
     return { output: stdout.trim(), error: null };
   } catch (error) {
+    // 🛠️ Handle timeout or other exec errors
+    if (error.killed || error.signal === "SIGTERM" || error.code === null) {
+      return { output: "", error: "Execution timed out" };
+    }
+
     return {
       output: "",
-      error: error.stderr || error.message,
+      error: error.stderr || error.message || "Unknown error occurred",
     };
   } finally {
-    // Clean up
+    // 🧹 Clean up temp files
     [cppFile, inputFile, execFile].forEach((file) => {
       try {
         unlinkSync(file);
-      } catch (_) {
-        // Ignore cleanup errors
-      }
+      } catch (_) {}
     });
   }
 };
