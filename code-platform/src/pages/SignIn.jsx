@@ -22,7 +22,7 @@ const SignIn = () => {
         `${import.meta.env.VITE_API_BASE_URL}/api/auth/signin`,
         form,
         {
-          withCredentials: true, // ✅ Needed for secure cookies/session auth
+          withCredentials: true, 
           headers: {
             "Content-Type": "application/json",
           },
@@ -31,11 +31,10 @@ const SignIn = () => {
 
       const { token, user } = res.data;
 
-      // ✅ Save token & user info
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      login(user); // Set context
+      login(user); 
       navigate("/problem-dashboard");
     } catch (err) {
       console.error(err);

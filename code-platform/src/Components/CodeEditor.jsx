@@ -121,7 +121,7 @@ const EditorPage = () => {
         </div>
       )}
 
-      {/* Verdict Bar */}
+     
       {!loading && isSubmitMode && (
         <div className="mt-6 bg-gray-800 p-4 rounded">
           <h2 className="text-xl font-semibold mb-2">
@@ -140,7 +140,7 @@ const EditorPage = () => {
         </div>
       )}
 
-      {/* Visible Test Cases Like LeetCode */}
+      
       {!loading &&
         problem.visibleTestCases &&
         problem.visibleTestCases.length > 0 && (

@@ -23,7 +23,6 @@ const ProblemDashboard = () => {
     filterProblems();
   }, [selectedTags, difficultyFilter, searchTerm, problems]);
 
-  // Safely extract all tags
   const allTags = Array.from(new Set(problems.flatMap((p) => p.tags || [])));
 
   const toggleTag = (tag) => {
@@ -189,7 +188,7 @@ const ProblemDashboard = () => {
           </tbody>
         </table>
       </div>
-      
+
     </div>
   );
 };
