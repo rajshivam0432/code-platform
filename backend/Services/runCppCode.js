@@ -1,12 +1,20 @@
-import { writeFileSync, unlinkSync } from "fs";
+import { writeFileSync, unlinkSync, existsSync, mkdirSync } from "fs";
 import { exec } from "child_process";
 import { v4 as uuid } from "uuid";
 import path from "path";
+import os from "os";
 import { fileURLToPath } from "url";
 import { promisify } from "util";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TEMP_DIR = path.join(__dirname, "../temp");
+
+// Use system temp directory (safer for production)
+const TEMP_DIR = path.join(os.tmpdir(), "cpp-runner");
+
+// Ensure TEMP_DIR exists
+if (!existsSync(TEMP_DIR)) {
+  mkdirSync(TEMP_DIR, { recursive: true });
+}
 
 const execAsync = promisify(exec);
 
@@ -17,28 +25,33 @@ export const runCppCode = async (code, input) => {
   const execFile = path.join(TEMP_DIR, `${jobId}`);
 
   try {
-    // Write code and input to temp files
+    // Write code and input
     writeFileSync(cppFile, code);
     writeFileSync(inputFile, input);
 
-    // Compile the code asynchronously
+    // Compile the code
     await execAsync(`g++ ${cppFile} -o ${execFile}`);
 
-    // Run the binary with input redirection
+    // Run the compiled binary with input
     const { stdout } = await execAsync(`${execFile} < ${inputFile}`, {
-      timeout: 5000, // timeout in milliseconds
-      maxBuffer: 1024 * 1024, // optional: handle larger outputs
+      timeout: 5000,
+      maxBuffer: 1024 * 1024, // optional
     });
 
     return { output: stdout.trim(), error: null };
   } catch (error) {
-    return { output: "", error: error.stderr || error.message };
+    return {
+      output: "",
+      error: error.stderr || error.message,
+    };
   } finally {
-    // Clean up temp files
+    // Clean up
     [cppFile, inputFile, execFile].forEach((file) => {
       try {
         unlinkSync(file);
-      } catch (_) {}
+      } catch (_) {
+        // Ignore cleanup errors
+      }
     });
   }
 };
