@@ -1,17 +1,14 @@
 import { writeFileSync, readFileSync, unlinkSync } from "fs";
 import { execSync } from "child_process";
 import { v4 as uuid } from "uuid";
-import path from "path";
-import { fileURLToPath } from "url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TEMP_DIR = path.join(__dirname, "../temp");
+const TEMP_DIR = "/tmp"; // ✅ writable in serverless environments
 
 export const runCppCode = async (code, input) => {
   const jobId = uuid();
-  const cppFile = path.join(TEMP_DIR, `${jobId}.cpp`);
-  const inputFile = path.join(TEMP_DIR, `${jobId}.in`);
-  const outputFile = path.join(TEMP_DIR, `${jobId}.out`);
+  const cppFile = `${TEMP_DIR}/${jobId}.cpp`;
+  const inputFile = `${TEMP_DIR}/${jobId}.in`;
+  const outputFile = `${TEMP_DIR}/${jobId}.out`;
 
   try {
     writeFileSync(cppFile, code);
