@@ -16,7 +16,7 @@ const app = express();
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
-      "https://bytebattle-platform.vercel.app",
+      "https://byte-battle2.vercel.app",
       "http://localhost:5173",
     ];
     if (!origin || allowedOrigins.includes(origin)) {
@@ -67,7 +67,7 @@ app.use("/api/submit", submitRouter);
 app.use("/api/auth", authRoutes);
 
 // ✅ Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on http://localhost:${PORT}`)
-);
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+});
