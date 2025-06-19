@@ -27,4 +27,24 @@ export const createProblem = async (req, res) => {
       .json({ error: "Failed to insert problems", details: err.message });
   }
 };
+export const getProblemById = async (req, res) => {
+  try {
+    const problem = await Problem.findById(req.params.id);
+
+    if (!problem) return res.status(404).json({ error: "Problem not found" });
+
+    // Extract only non-hidden (visible) test cases
+    const visibleTestCases = problem.testCases
+      .filter((tc) => !tc.isHidden)
+      .slice(0, 3); // Optional: limit to 3 visible cases
+
+    res.status(200).json({
+      ...problem.toObject(),
+      visibleTestCases,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
+};
+
 
