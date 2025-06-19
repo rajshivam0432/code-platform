@@ -189,6 +189,7 @@ const ProblemDashboard = () => {
           </tbody>
         </table>
       </div>
+      
     </div>
   );
 };
