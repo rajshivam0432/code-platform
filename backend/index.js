@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./db/db.js";
 
-// Route Imports
+// Routes
 import problemRoutes from "./routes/Problem.routes.js";
 import codeRoutes from "./routes/Code.routes.js";
 import submitRouter from "./routes/Submit.routes.js";
@@ -12,13 +12,10 @@ import authRoutes from "./routes/Auth.routes.js";
 dotenv.config();
 const app = express();
 
-// ✅ Updated and safe CORS options
+// ✅ CORS Options
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      "https://bytebattle-platform.vercel.app",
-      "http://localhost:5173",
-    ];
+    const allowedOrigins = ["https://bytebattle-platform.vercel.app"];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -36,22 +33,31 @@ const corsOptions = {
   ],
 };
 
-// ✅ Apply CORS before all routes
+// ✅ Apply CORS middleware globally
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Handle preflight requests
 
-// ✅ Parse JSON requests
+// ✅ Handle OPTIONS preflight manually and safely
+// app.options("*", (req, res) => {
+//   res.set({
+//     "Access-Control-Allow-Origin": req.headers.origin || "*",
+//     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+//     "Access-Control-Allow-Headers":
+//       "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+//     "Access-Control-Allow-Credentials": "true",
+//   });
+//   res.sendStatus(204);
+// });
+
+// ✅ Body parser
 app.use(express.json());
 
-// ✅ Connect to MongoDB
+// ✅ Connect DB
 connectDB();
 
-// ✅ Health check
+// ✅ Routes
 app.get("/", (req, res) => {
   res.send("🚀 API is running successfully!");
 });
-
-// ✅ Routes
 app.use("/api/problems", problemRoutes);
 app.use("/api/code", codeRoutes);
 app.use("/api/submit", submitRouter);

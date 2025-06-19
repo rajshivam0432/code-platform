@@ -22,7 +22,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// Already has GET / and GET /:id
+// Already has GET / and GET 
 
 router.post("/", async (req, res) => {
   try {
