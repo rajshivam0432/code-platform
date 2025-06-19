@@ -12,7 +12,7 @@ import authRoutes from "./routes/Auth.routes.js";
 dotenv.config();
 const app = express();
 
-// ✅ Allowed frontend origins
+// ✅ Updated and safe CORS options
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
@@ -27,15 +27,20 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: [
+    "Origin",
+    "X-Requested-With",
+    "Content-Type",
+    "Accept",
+    "Authorization",
+  ],
 };
 
-
-// ✅ CORS middleware
+// ✅ Apply CORS before all routes
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Preflight handling
+app.options("*", cors(corsOptions)); // Handle preflight requests
 
-// ✅ Body parser
+// ✅ Parse JSON requests
 app.use(express.json());
 
 // ✅ Connect to MongoDB
