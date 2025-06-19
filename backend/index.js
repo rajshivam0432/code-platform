@@ -15,7 +15,10 @@ const app = express();
 // ✅ CORS Options
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = ["https://bytebattle-platform.vercel.app"];
+    const allowedOrigins = [
+      "https://bytebattle-platform.vercel.app",
+      "http://localhost:5173",
+    ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
