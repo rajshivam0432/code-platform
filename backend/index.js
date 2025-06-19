@@ -39,18 +39,6 @@ const corsOptions = {
 // ✅ Apply CORS middleware globally
 app.use(cors(corsOptions));
 
-// ✅ Handle OPTIONS preflight manually and safely
-// app.options("*", (req, res) => {
-//   res.set({
-//     "Access-Control-Allow-Origin": req.headers.origin || "*",
-//     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-//     "Access-Control-Allow-Headers":
-//       "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-//     "Access-Control-Allow-Credentials": "true",
-//   });
-//   res.sendStatus(204);
-// });
-
 // ✅ Body parser
 app.use(express.json());
 
