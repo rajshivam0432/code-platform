@@ -9,17 +9,19 @@ const EditorPage = () => {
   const [code, setCode] = useState("// Write your C++ code here");
   const [result, setResult] = useState([]);
   const [scorePercent, setScorePercent] = useState(0);
-  const [loading, setLoading] = useState(false); // ✅ New state for spinner
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     axios
-      .get(`${import.meta.env.VITE_API_BASE_URL}/api/problems/${id}`)
+      .get(`${import.meta.env.VITE_API_BASE_URL}/api/problems/${id}`, {
+        withCredentials: true, // ✅ Send cookies/session
+      })
       .then((res) => setProblem(res.data))
       .catch((err) => console.error(err));
   }, [id]);
 
   const handleSubmit = async () => {
-    setLoading(true); // ✅ Start loading
+    setLoading(true);
     setResult([]);
     try {
       const res = await axios.post(
@@ -28,6 +30,9 @@ const EditorPage = () => {
           code,
           language: "cpp",
           problemId: id,
+        },
+        {
+          withCredentials: true, // ✅ Send credentials in POST
         }
       );
       setResult(res.data.results);
@@ -35,7 +40,7 @@ const EditorPage = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false); // ✅ Stop loading
+      setLoading(false);
     }
   };
 
@@ -60,7 +65,6 @@ const EditorPage = () => {
         {loading ? "Compiling..." : "Submit"}
       </button>
 
-      {/* ✅ Show compiling bar */}
       {loading && (
         <div className="mt-4 w-full bg-gray-700 h-2 rounded">
           <div
