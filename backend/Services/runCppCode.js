@@ -19,7 +19,7 @@ if (!existsSync(TEMP_DIR)) {
 const execAsync = promisify(exec);
 
 // 🛡️ Main C++ runner with timeout
-export const runCppCode = async (code, input, timeout = 3000) => {
+export const runCppCode = async (code, input, timeout = 1000) => {
   const jobId = uuid();
   const cppFile = path.join(TEMP_DIR, `${jobId}.cpp`);
   const inputFile = path.join(TEMP_DIR, `${jobId}.in`);
