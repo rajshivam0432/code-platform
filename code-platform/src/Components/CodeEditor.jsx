@@ -4,21 +4,21 @@ import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 
-// 🔧 Custom Markdown styling
+// Custom markdown renderer for AI Review
 const markdownComponents = {
-  h1: ({ node, ...props }) => (
+  h1: (props) => (
     <h1 className="text-2xl font-bold text-purple-400 my-4" {...props} />
   ),
-  h2: ({ node, ...props }) => (
+  h2: (props) => (
     <h2 className="text-xl font-bold text-purple-300 mt-4 mb-2" {...props} />
   ),
-  h3: ({ node, ...props }) => (
+  h3: (props) => (
     <h3
       className="text-lg font-semibold text-purple-200 mt-3 mb-1"
       {...props}
     />
   ),
-  p: ({ node, children }) => {
+  p: ({ children }) => {
     const text = children[0];
     if (typeof text === "string") {
       const match = text.match(/^(.+?[.?!])(\s+|$)(.*)/);
@@ -38,7 +38,7 @@ const markdownComponents = {
       <strong>{children}</strong>
     </li>
   ),
-  code: ({ className, children }) => (
+  code: ({ children }) => (
     <pre className="bg-black border border-gray-700 text-green-400 text-sm p-3 rounded-md my-2 overflow-auto whitespace-pre-wrap">
       <code>{children}</code>
     </pre>
@@ -64,6 +64,10 @@ const EditorPage = () => {
   const [isSubmitMode, setIsSubmitMode] = useState(false);
   const [aiReview, setAiReview] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  
+  const [customInput, setCustomInput] = useState("");
+  const [customOutput, setCustomOutput] = useState("");
+  const [customRunLoading, setCustomRunLoading] = useState(false);
 
   useEffect(() => {
     axios
@@ -98,9 +102,7 @@ const EditorPage = () => {
           problemId: id,
           isSubmit: submit,
         },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
       setResult(res.data.results);
       setScorePercent(res.data.scorePercent);
@@ -108,6 +110,32 @@ const EditorPage = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCustomRun = async (submit) => {
+    setCustomRunLoading(true);
+    setCustomOutput("");
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/submit/custom`,
+        {
+          code,
+          language: "cpp",
+          problemId: id,
+          input: customInput,
+          isSubmit: submit,
+        },
+        { withCredentials: true }
+      );
+      // setResult(res.data.results);
+      console.log("res.data:", res.data.output);
+      setCustomOutput(res.data.output || "No output.");
+    } catch (err) {
+      console.error(err);
+      setCustomOutput("Error occurred while executing code.");
+    } finally {
+      setCustomRunLoading(false);
     }
   };
 
@@ -178,101 +206,95 @@ const EditorPage = () => {
         </button>
       </div>
 
-      {/* Progress Bar */}
-      {loading && (
-        <div className="mt-4 w-full bg-gray-700 h-2 rounded">
-          <div
-            className="bg-yellow-400 h-2 animate-pulse rounded"
-            style={{ width: "100%" }}
-          ></div>
-          <p className="text-sm text-yellow-400 mt-1">
-            Compiling and running test cases...
-          </p>
-        </div>
-      )}
+      {/* 🧪 Custom Input Section */}
+      <div className="mt-6 bg-gray-800 p-4 rounded space-y-4">
+        <h2 className="text-lg font-semibold text-white">Custom Input</h2>
+        <textarea
+          value={customInput}
+          onChange={(e) => setCustomInput(e.target.value)}
+          className="w-full h-32 bg-gray-900 text-white p-3 rounded border border-gray-700 resize-none"
+          placeholder="Enter custom input here..."
+        ></textarea>
 
-      {/* Score Result */}
-      {!loading && isSubmitMode && (
-        <div className="mt-6 bg-gray-800 p-4 rounded">
-          <h2 className="text-xl font-semibold mb-2">
-            {scorePercent === 100
-              ? "All test cases passed"
-              : `Some test cases failed (${scorePercent}% passed)`}
-          </h2>
-          <div className="w-full bg-gray-700 h-3 rounded mb-2">
-            <div
-              className={`h-3 rounded ${
-                scorePercent === 100 ? "bg-green-500" : "bg-red-500"
-              }`}
-              style={{ width: `${scorePercent}%` }}
-            ></div>
-          </div>
-        </div>
-      )}
+        <button
+          onClick={()=>handleCustomRun(false)}
+          className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded disabled:opacity-50"
+          disabled={customRunLoading}
+        >
+          {customRunLoading ? "Running..." : "Run with Custom Input"}
+        </button>
 
-      {/* Sample Test Case Results */}
-      {!loading &&
-        problem.visibleTestCases &&
-        problem.visibleTestCases.length > 0 && (
-          <div className="mt-6 bg-gray-800 p-4 rounded">
-            <h2 className="text-lg font-semibold mb-4">Sample Test Cases</h2>
-            <div className="flex flex-wrap gap-4">
-              {problem.visibleTestCases.map((tc, idx) => {
-                const testResult = result.find(
-                  (r) => r.input.trim() === tc.input.trim()
-                );
-                const passed = testResult?.passed;
-                const actualOutput = testResult?.actualOutput;
-                const error = testResult?.error;
-
-                return (
-                  <div
-                    key={idx}
-                    className={`w-full md:w-[48%] bg-gray-700 rounded p-4 space-y-2 border ${
-                      passed === true
-                        ? "border-green-500"
-                        : passed === false
-                        ? "border-red-500"
-                        : "border-gray-600"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-white">
-                        Test Case #{idx + 1}
-                      </span>
-                      {passed === true && (
-                        <span className="bg-green-600 px-2 py-1 rounded text-sm font-medium">
-                          Passed
-                        </span>
-                      )}
-                      {passed === false && (
-                        <span className="bg-red-600 px-2 py-1 rounded text-sm font-medium">
-                          Failed
-                        </span>
-                      )}
-                    </div>
-                    <pre className="text-sm text-gray-300">
-                      <strong>Input:</strong> {tc.input}
-                    </pre>
-                    <pre className="text-sm text-green-300">
-                      <strong>Expected:</strong> {tc.expectedOutput}
-                    </pre>
-                    {passed !== undefined && (
-                      <pre className="text-sm text-blue-300">
-                        <strong>Got:</strong> {actualOutput}
-                      </pre>
-                    )}
-                    {error && (
-                      <pre className="text-sm text-red-400 break-all whitespace-pre-wrap overflow-x-auto">
-                        <strong>Error:</strong> {error}
-                      </pre>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        {customOutput && (
+          <div className="mt-4">
+            <h3 className="text-md font-semibold text-white mb-2">Output:</h3>
+            <pre className="bg-black text-green-400 text-sm p-3 rounded border border-gray-700 whitespace-pre-wrap overflow-auto">
+              {customOutput}
+            </pre>
           </div>
         )}
+      </div>
+
+      {/* Sample Test Cases */}
+      {!loading && problem.visibleTestCases?.length > 0 && (
+        <div className="mt-6 bg-gray-800 p-4 rounded">
+          <h2 className="text-lg font-semibold mb-4">Sample Test Cases</h2>
+          <div className="flex flex-wrap gap-4">
+            {problem.visibleTestCases.map((tc, idx) => {
+              const testResult = result.find(
+                (r) => r.input.trim() === tc.input.trim()
+              );
+              const passed = testResult?.passed;
+              const actualOutput = testResult?.actualOutput;
+              const error = testResult?.error;
+
+              return (
+                <div
+                  key={idx}
+                  className={`w-full md:w-[48%] bg-gray-700 rounded p-4 space-y-2 border ${
+                    passed === true
+                      ? "border-green-500"
+                      : passed === false
+                      ? "border-red-500"
+                      : "border-gray-600"
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-white">
+                      Test Case #{idx + 1}
+                    </span>
+                    {passed === true && (
+                      <span className="bg-green-600 px-2 py-1 rounded text-sm">
+                        Passed
+                      </span>
+                    )}
+                    {passed === false && (
+                      <span className="bg-red-600 px-2 py-1 rounded text-sm">
+                        Failed
+                      </span>
+                    )}
+                  </div>
+                  <pre className="text-sm text-gray-300">
+                    <strong>Input:</strong> {tc.input}
+                  </pre>
+                  <pre className="text-sm text-green-300">
+                    <strong>Expected:</strong> {tc.expectedOutput}
+                  </pre>
+                  {actualOutput !== undefined && (
+                    <pre className="text-sm text-blue-300">
+                      <strong>Got:</strong> {actualOutput}
+                    </pre>
+                  )}
+                  {error && (
+                    <pre className="text-sm text-red-400 break-all whitespace-pre-wrap overflow-x-auto">
+                      <strong>Error:</strong> {error}
+                    </pre>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* AI Review Result */}
       {aiReview && (
