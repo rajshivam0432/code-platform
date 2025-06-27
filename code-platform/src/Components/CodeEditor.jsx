@@ -2,6 +2,48 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
+import ReactMarkdown from "react-markdown";
+
+// 🔧 Custom Markdown styling
+const markdownComponents = {
+  h1: ({ node, ...props }) => (
+    <h1 className="text-2xl font-bold text-purple-400 my-4" {...props} />
+  ),
+  h2: ({ node, ...props }) => (
+    <h2 className="text-xl font-bold text-purple-300 mt-4 mb-2" {...props} />
+  ),
+  h3: ({ node, ...props }) => (
+    <h3
+      className="text-lg font-semibold text-purple-200 mt-3 mb-1"
+      {...props}
+    />
+  ),
+  p: ({ node, children }) => {
+    const text = children[0];
+    if (typeof text === "string") {
+      const match = text.match(/^(.+?[.?!])(\s+|$)(.*)/);
+      if (match) {
+        return (
+          <p className="text-white leading-relaxed my-2">
+            <strong>{match[1]}</strong>
+            {match[3] ? ` ${match[3]}` : ""}
+          </p>
+        );
+      }
+    }
+    return <p className="text-white leading-relaxed my-2">{children}</p>;
+  },
+  li: ({ children }) => (
+    <li className="ml-6 list-disc text-white my-1">
+      <strong>{children}</strong>
+    </li>
+  ),
+  code: ({ className, children }) => (
+    <pre className="bg-black border border-gray-700 text-green-400 text-sm p-3 rounded-md my-2 overflow-auto whitespace-pre-wrap">
+      <code>{children}</code>
+    </pre>
+  ),
+};
 
 const DEFAULT_CODE = `// Write your C++ code here
 #include <iostream>
@@ -234,11 +276,15 @@ const EditorPage = () => {
 
       {/* AI Review Result */}
       {aiReview && (
-        <div className="mt-6 bg-gray-800 p-4 rounded whitespace-pre-wrap">
-          <h2 className="text-xl font-semibold mb-4 text-purple-400">
+        <div className="mt-6 bg-gray-900 p-6 rounded-xl border border-purple-700 shadow-lg">
+          <h2 className="text-2xl font-bold mb-6 text-purple-400">
             💡 AI Code Review
           </h2>
-          <pre className="text-sm text-white">{aiReview}</pre>
+          <div className="prose prose-invert max-w-none">
+            <ReactMarkdown components={markdownComponents}>
+              {aiReview}
+            </ReactMarkdown>
+          </div>
         </div>
       )}
     </div>
