@@ -5,10 +5,10 @@ import connectDB from "./db/db.js";
 
 // Routes
 import problemRoutes from "./routes/Problem.routes.js";
-import codeRoutes from "./routes/Code.routes.js";
+import compileRoute from "./routes/compiler.routes.js";
 import submitRouter from "./routes/Submit.routes.js";
 import authRoutes from "./routes/Auth.routes.js";
-
+import aiReviewRoute from "./routes/aiReviewRoute.js";
 dotenv.config();
 const app = express();
 
@@ -47,8 +47,10 @@ connectDB();
 app.get("/", (req, res) => {
   res.send("🚀 API is running successfully!");
 });
+
+app.use("/api", aiReviewRoute);
 app.use("/api/problems", problemRoutes);
-app.use("/api/code", codeRoutes);
+app.use("/api", compileRoute);
 app.use("/api/submit", submitRouter);
 app.use("/api/auth", authRoutes);
 

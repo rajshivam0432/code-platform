@@ -26,8 +26,10 @@ router.post("/signup", async (req, res) => {
 
 // Login
 router.post("/signin", async (req, res) => {
+  console.log("heree in signi22n ");
   const { email, password } = req.body;
   try {
+    console.log("heree in signin")
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ msg: "User not found" });
 
@@ -37,7 +39,7 @@ router.post("/signin", async (req, res) => {
     const token = jwt.sign({ id: user._id }, JWT_SECRET);
     res.json({ token, user: { id: user._id, username: user.username, email } });
   } catch (err) {
-    res.status(500).json({ msg: "Signin failed" });
+    res.status(500).json({ msg: "Signin failed" ,error: err.message });
   }
 });
 

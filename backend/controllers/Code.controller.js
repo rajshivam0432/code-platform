@@ -1,5 +1,5 @@
 import Problem from "../models/Problem.model.js";
-import { runCppCode } from "../Services/runCppCode.js";
+import { sendToCompiler } from "../service/compilerService.js";
 
 export const submitCode = async (req, res) => {
   const { code, language, problemId, isSubmit = false } = req.body;
@@ -19,7 +19,7 @@ export const submitCode = async (req, res) => {
 
       if (!isSubmit && isHidden) continue;
 
-      const { output, error } = await runCppCode(code, input);
+      const { output, error } = await sendToCompiler(code, input);
       const trimmedOutput = output.trim();
       const trimmedExpected = expectedOutput.trim();
       const passed = trimmedOutput === trimmedExpected;
