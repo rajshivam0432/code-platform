@@ -20,6 +20,8 @@ const EditorPage = () => {
   const [scorePercent, setScorePercent] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isSubmitMode, setIsSubmitMode] = useState(false);
+  const [aiReview, setAiReview] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     axios
@@ -44,6 +46,7 @@ const EditorPage = () => {
     setIsSubmitMode(submit);
     setLoading(true);
     setResult([]);
+    setAiReview("");
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/submit`,
@@ -66,6 +69,24 @@ const EditorPage = () => {
     }
   };
 
+  const handleAIReview = async () => {
+    setAiLoading(true);
+    setAiReview("");
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/api/ai-review`,
+        { code, language: "cpp" },
+        { withCredentials: true }
+      );
+      setAiReview(res.data.review || "No review generated.");
+    } catch (error) {
+      setAiReview("Failed to get AI review.");
+      console.error(error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleReset = () => {
     setCode(DEFAULT_CODE);
     localStorage.setItem(`code-${id}`, DEFAULT_CODE);
@@ -85,7 +106,7 @@ const EditorPage = () => {
       />
 
       {/* Action Buttons */}
-      <div className="flex gap-4 mt-6">
+      <div className="flex flex-wrap gap-4 mt-6">
         <button
           onClick={() => handleRunOrSubmit(false)}
           className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded disabled:opacity-50"
@@ -106,6 +127,13 @@ const EditorPage = () => {
         >
           Reset Code
         </button>
+        <button
+          onClick={handleAIReview}
+          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
+          disabled={aiLoading}
+        >
+          {aiLoading ? "Reviewing..." : "AI Review"}
+        </button>
       </div>
 
       {/* Progress Bar */}
@@ -121,13 +149,13 @@ const EditorPage = () => {
         </div>
       )}
 
-     
+      {/* Score Result */}
       {!loading && isSubmitMode && (
         <div className="mt-6 bg-gray-800 p-4 rounded">
           <h2 className="text-xl font-semibold mb-2">
             {scorePercent === 100
               ? "All test cases passed"
-              : ` Some test cases failed (${scorePercent}% passed)`}
+              : `Some test cases failed (${scorePercent}% passed)`}
           </h2>
           <div className="w-full bg-gray-700 h-3 rounded mb-2">
             <div
@@ -140,7 +168,7 @@ const EditorPage = () => {
         </div>
       )}
 
-      
+      {/* Sample Test Case Results */}
       {!loading &&
         problem.visibleTestCases &&
         problem.visibleTestCases.length > 0 && (
@@ -172,12 +200,12 @@ const EditorPage = () => {
                       </span>
                       {passed === true && (
                         <span className="bg-green-600 px-2 py-1 rounded text-sm font-medium">
-                          Passed 
+                          Passed
                         </span>
                       )}
                       {passed === false && (
                         <span className="bg-red-600 px-2 py-1 rounded text-sm font-medium">
-                          Failed 
+                          Failed
                         </span>
                       )}
                     </div>
@@ -203,6 +231,16 @@ const EditorPage = () => {
             </div>
           </div>
         )}
+
+      {/* AI Review Result */}
+      {aiReview && (
+        <div className="mt-6 bg-gray-800 p-4 rounded whitespace-pre-wrap">
+          <h2 className="text-xl font-semibold mb-4 text-purple-400">
+            💡 AI Code Review
+          </h2>
+          <pre className="text-sm text-white">{aiReview}</pre>
+        </div>
+      )}
     </div>
   ) : (
     <p className="text-white p-4">Loading...</p>
