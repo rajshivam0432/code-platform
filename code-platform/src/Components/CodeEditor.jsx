@@ -263,7 +263,7 @@ const EditorPage = () => {
                       </pre>
                     )}
                     {error && (
-                      <pre className="text-sm text-red-400">
+                      <pre className="text-sm text-red-400 break-all whitespace-pre-wrap overflow-x-auto">
                         <strong>Error:</strong> {error}
                       </pre>
                     )}
