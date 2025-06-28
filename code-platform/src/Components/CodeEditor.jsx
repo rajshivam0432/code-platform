@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 import { io } from "socket.io-client";
-import { useRef } from "react";
 
 // Custom markdown renderer for AI Review
 const markdownComponents = {
@@ -66,64 +65,68 @@ const EditorPage = () => {
   const [isSubmitMode, setIsSubmitMode] = useState(false);
   const [aiReview, setAiReview] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  
   const [customInput, setCustomInput] = useState("");
   const [customOutput, setCustomOutput] = useState("");
   const [customRunLoading, setCustomRunLoading] = useState(false);
+
   const socketRef = useRef(null);
+  const suppressRef = useRef(false);
 
-  useEffect(() => {
-    const socket = io(import.meta.env.VITE_SOCKET_SERVER_URL, {
-      transports: ["websocket","polling"], 
-    });
-
-    socket.emit("join-room", id);
-
-    socket.on("code-update", (newCode) => {
-      if (newCode !== code) {
-        setCode(newCode);
-      }
-    });
-
-    socketRef.current = socket;
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [id]);
-  
-  
+  // Load problem
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_BASE_URL}/api/problems/${id}`, {
         withCredentials: true,
       })
-      
       .then((res) => setProblem(res.data))
       .catch((err) => console.error(err));
   }, [id]);
 
+  // Load code from localStorage
   useEffect(() => {
     const saved = localStorage.getItem(`code-${id}`);
     setCode(saved || DEFAULT_CODE);
   }, [id]);
 
+  // Socket.IO for real-time collaboration
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_SOCKET_SERVER_URL, {
+      transports: ["polling"],
+    });
+
+    socketRef.current = socket;
+    socket.emit("join-room", id);
+
+    socket.on("code-update", (newCode) => {
+      if (newCode !== code) {
+        suppressRef.current = true;
+        setCode(newCode);
+        setTimeout(() => {
+          suppressRef.current = false;
+        }, 50);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [id, code]);
+
   const handleCodeChange = (value) => {
     setCode(value);
     localStorage.setItem(`code-${id}`, value);
 
-    // Emit the code change to other users
-    if (socketRef.current) {
-      socketRef.current.emit("code-changed", { roomId: id, code: value });
+    if (socketRef.current && !suppressRef.current) {
+      socketRef.current.emit("code-change", { roomId: id, code: value });
     }
   };
-  
 
   const handleRunOrSubmit = async (submit) => {
     setIsSubmitMode(submit);
     setLoading(true);
     setResult([]);
     setAiReview("");
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/submit`,
@@ -144,9 +147,10 @@ const EditorPage = () => {
     }
   };
 
-  const handleCustomRun = async (submit) => {
+  const handleCustomRun = async () => {
     setCustomRunLoading(true);
     setCustomOutput("");
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/submit/custom`,
@@ -155,12 +159,9 @@ const EditorPage = () => {
           language: "cpp",
           problemId: id,
           input: customInput,
-          isSubmit: submit,
         },
         { withCredentials: true }
       );
-      // setResult(res.data.results);
-      console.log("res.data:", res.data.output);
       setCustomOutput(res.data.output || "No output.");
     } catch (err) {
       console.error(err);
@@ -180,9 +181,9 @@ const EditorPage = () => {
         { withCredentials: true }
       );
       setAiReview(res.data.review || "No review generated.");
-    } catch (error) {
+    } catch (err) {
       setAiReview("Failed to get AI review.");
-      console.error(error);
+      console.error(err);
     } finally {
       setAiLoading(false);
     }
@@ -193,15 +194,17 @@ const EditorPage = () => {
     localStorage.setItem(`code-${id}`, DEFAULT_CODE);
   };
 
-  return problem ? (
-    
+  if (!problem) {
+    return <p className="text-white p-4">Loading...</p>;
+  }
+
+  return (
     <div className="p-4 bg-gray-900 text-white min-h-screen">
       <h1 className="text-2xl font-bold mb-4">{problem.title}</h1>
       <p className="mb-4 text-gray-300 whitespace-pre-wrap">
         {problem.description}
       </p>
-      
-        
+
       {problem.constraints && (
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-yellow-400 mb-1">
@@ -212,7 +215,6 @@ const EditorPage = () => {
           </pre>
         </div>
       )}
-     
 
       <MonacoEditor
         height="400px"
@@ -222,7 +224,6 @@ const EditorPage = () => {
         onChange={handleCodeChange}
       />
 
-      {/* Action Buttons */}
       <div className="flex flex-wrap gap-4 mt-6">
         <button
           onClick={() => handleRunOrSubmit(false)}
@@ -253,7 +254,6 @@ const EditorPage = () => {
         </button>
       </div>
 
-      {/* 🧪 Custom Input Section */}
       <div className="mt-6 bg-gray-800 p-4 rounded space-y-4">
         <h2 className="text-lg font-semibold text-white">Custom Input</h2>
         <textarea
@@ -264,7 +264,7 @@ const EditorPage = () => {
         ></textarea>
 
         <button
-          onClick={() => handleCustomRun(false)}
+          onClick={handleCustomRun}
           className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded disabled:opacity-50"
           disabled={customRunLoading}
         >
@@ -280,7 +280,7 @@ const EditorPage = () => {
           </div>
         )}
       </div>
-      {/* Score Result */}
+
       {!loading && isSubmitMode && (
         <div className="mt-6 bg-gray-800 p-4 rounded">
           <h2 className="text-xl font-semibold mb-2 text-white">
@@ -299,7 +299,6 @@ const EditorPage = () => {
         </div>
       )}
 
-      {/* Sample Test Cases */}
       {!loading && problem.visibleTestCases?.length > 0 && (
         <div className="mt-6 bg-gray-800 p-4 rounded">
           <h2 className="text-lg font-semibold mb-4">Sample Test Cases</h2>
@@ -361,7 +360,6 @@ const EditorPage = () => {
         </div>
       )}
 
-      {/* AI Review Result */}
       {aiReview && (
         <div className="mt-6 bg-gray-900 p-6 rounded-xl border border-purple-700 shadow-lg">
           <h2 className="text-2xl font-bold mb-6 text-purple-400">
@@ -375,8 +373,6 @@ const EditorPage = () => {
         </div>
       )}
     </div>
-  ) : (
-    <p className="text-white p-4">Loading...</p>
   );
 };
 
