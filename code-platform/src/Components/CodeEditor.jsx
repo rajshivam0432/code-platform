@@ -3,6 +3,8 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
+import { io } from "socket.io-client";
+import { useRef } from "react";
 
 // Custom markdown renderer for AI Review
 const markdownComponents = {
@@ -68,7 +70,29 @@ const EditorPage = () => {
   const [customInput, setCustomInput] = useState("");
   const [customOutput, setCustomOutput] = useState("");
   const [customRunLoading, setCustomRunLoading] = useState(false);
+  const socketRef = useRef(null);
 
+  useEffect(() => {
+    const socket = io(import.meta.env.VITE_SOCKET_SERVER_URL, {
+      transports: ["websocket"], 
+    });
+
+    socket.emit("join-room", id);
+
+    socket.on("code-update", (newCode) => {
+      if (newCode !== code) {
+        setCode(newCode);
+      }
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [id]);
+  
+  
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_BASE_URL}/api/problems/${id}`, {
@@ -86,7 +110,13 @@ const EditorPage = () => {
   const handleCodeChange = (value) => {
     setCode(value);
     localStorage.setItem(`code-${id}`, value);
+
+    // Emit the code change to other users
+    if (socketRef.current) {
+      socketRef.current.emit("code-change", { roomId: id, code: value });
+    }
   };
+  
 
   const handleRunOrSubmit = async (submit) => {
     setIsSubmitMode(submit);
@@ -163,12 +193,13 @@ const EditorPage = () => {
   };
 
   return problem ? (
+    
     <div className="p-4 bg-gray-900 text-white min-h-screen">
       <h1 className="text-2xl font-bold mb-4">{problem.title}</h1>
       <p className="mb-4 text-gray-300 whitespace-pre-wrap">
         {problem.description}
       </p>
-
+        
       {problem.constraints && (
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-yellow-400 mb-1">
@@ -179,6 +210,7 @@ const EditorPage = () => {
           </pre>
         </div>
       )}
+     
 
       <MonacoEditor
         height="400px"
