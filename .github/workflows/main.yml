@@ -1,48 +1,48 @@
-name: Run All Projects
+name: CI for All Services
 
 on:
   push:
     branches: [ master ]
 
 jobs:
-  folder1:
+  frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - name: Install and Test Folder 1
-        working-directory: task/folder1
+      - name: Install & Build Frontend
+        working-directory: task/code-platform
+        run: |
+          npm install
+          npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install & Test Backend
+        working-directory: task/backend
         run: |
           npm install
           npm test
 
-  folder2:
+  compiler:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - name: Install and Test Folder 2
-        working-directory: task/folder2
-        run: |
-          npm install
-          npm test
-
-  folder3:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: Install and Test Folder 3
-        working-directory: task/folder3
+      - name: Install & Test Compiler Server
+        working-directory: task/compiler-server
         run: |
           npm install
           npm test
