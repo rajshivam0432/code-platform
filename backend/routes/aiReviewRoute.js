@@ -1,15 +1,20 @@
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
-
+import ProblemModel from "../models/Problem.model.js";
 dotenv.config();
 const router = express.Router();
 
 router.post("/ai-review", async (req, res) => {
-  const { code, language = "cpp" } = req.body;
+  const { problemId,code, language = "cpp" } = req.body;
 
   if (!code) return res.status(400).json({ error: "Code is required" });
-
+  
+  const problem = await ProblemModel.findById(problemId);
+  if (!problem) {
+    return res.status(400).json({ error: "problem is required" });
+  }
+  console.log("problem:", problem.description, problemId);
   const prompt = `
   You are a senior software engineer reviewing the following ${language} code.
   
@@ -48,10 +53,12 @@ router.post("/ai-review", async (req, res) => {
   \`\`\`${language}
   ${code}
   \`\`\`
+  ${problem}\`\`\`
   `;
   
 
   try {
+    
     const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
     const geminiResponse = await axios.post(
