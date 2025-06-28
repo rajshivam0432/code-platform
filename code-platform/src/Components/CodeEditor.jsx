@@ -145,7 +145,7 @@ const EditorPage = () => {
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/ai-review`,
-        { code, language: "cpp" },
+        { code, language: "cpp", problemId: id },
         { withCredentials: true }
       );
       setAiReview(res.data.review || "No review generated.");
