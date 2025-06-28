@@ -39,7 +39,7 @@ const Navbar = () => {
 
           <div className="flex items-center gap-6">
             <a href="/problem-dashboard" className="hover:text-blue-400">
-              Dashboard
+              Dashboards
             </a>
 
             {isEditorPage && (
