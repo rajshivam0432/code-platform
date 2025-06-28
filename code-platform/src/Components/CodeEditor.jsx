@@ -199,6 +199,7 @@ const EditorPage = () => {
       <p className="mb-4 text-gray-300 whitespace-pre-wrap">
         {problem.description}
       </p>
+      
         
       {problem.constraints && (
         <div className="mb-6">
