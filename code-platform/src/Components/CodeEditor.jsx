@@ -77,6 +77,8 @@ const EditorPage = () => {
       transports: ["websocket","polling"], 
     });
 
+
+    
     socket.emit("join-room", id);
 
     socket.on("code-update", (newCode) => {
