@@ -77,8 +77,6 @@ const EditorPage = () => {
       transports: ["websocket","polling"], 
     });
 
-
-    
     socket.emit("join-room", id);
 
     socket.on("code-update", (newCode) => {
@@ -115,7 +113,7 @@ const EditorPage = () => {
 
     // Emit the code change to other users
     if (socketRef.current) {
-      socketRef.current.emit("code-change", { roomId: id, code: value });
+      socketRef.current.emit("code-changed", { roomId: id, code: value });
     }
   };
   
