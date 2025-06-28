@@ -74,7 +74,7 @@ const EditorPage = () => {
 
   useEffect(() => {
     const socket = io(import.meta.env.VITE_SOCKET_SERVER_URL, {
-      transports: ["websocket"], 
+      transports: ["websocket","polling"], 
     });
 
     socket.emit("join-room", id);
