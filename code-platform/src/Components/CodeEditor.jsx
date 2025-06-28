@@ -83,6 +83,7 @@ const EditorPage = () => {
       if (newCode !== code) {
         setCode(newCode);
       }
+      
     });
 
     socketRef.current = socket;
