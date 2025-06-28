@@ -98,6 +98,7 @@ const EditorPage = () => {
       .get(`${import.meta.env.VITE_API_BASE_URL}/api/problems/${id}`, {
         withCredentials: true,
       })
+      
       .then((res) => setProblem(res.data))
       .catch((err) => console.error(err));
   }, [id]);
