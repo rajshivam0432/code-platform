@@ -74,7 +74,7 @@ const EditorPage = () => {
 
   useEffect(() => {
     const socket = io(import.meta.env.VITE_SOCKET_SERVER_URL, {
-      transports: ["polling"], 
+      transports: ["websocket"], 
     });
 
     socket.emit("join-room", id);
@@ -83,7 +83,6 @@ const EditorPage = () => {
       if (newCode !== code) {
         setCode(newCode);
       }
-      
     });
 
     socketRef.current = socket;
@@ -200,7 +199,7 @@ const EditorPage = () => {
       <p className="mb-4 text-gray-300 whitespace-pre-wrap">
         {problem.description}
       </p>
-
+      
         
       {problem.constraints && (
         <div className="mb-6">
