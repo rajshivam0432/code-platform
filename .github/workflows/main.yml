@@ -1,20 +1,48 @@
-name: CI Test
+name: Run All Projects
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
-  build:
+  folder1:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Node
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - run: npm install
-      - run: npm test
+      - name: Install and Test Folder 1
+        working-directory: task/folder1
+        run: |
+          npm install
+          npm test
+
+  folder2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install and Test Folder 2
+        working-directory: task/folder2
+        run: |
+          npm install
+          npm test
+
+  folder3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install and Test Folder 3
+        working-directory: task/folder3
+        run: |
+          npm install
+          npm test
