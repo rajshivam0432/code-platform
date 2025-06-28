@@ -165,7 +165,20 @@ const EditorPage = () => {
   return problem ? (
     <div className="p-4 bg-gray-900 text-white min-h-screen">
       <h1 className="text-2xl font-bold mb-4">{problem.title}</h1>
-      <p className="mb-4 text-gray-300">{problem.description}</p>
+      <p className="mb-4 text-gray-300 whitespace-pre-wrap">
+        {problem.description}
+      </p>
+
+      {problem.constraints && (
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-yellow-400 mb-1">
+            Constraints
+          </h2>
+          <pre className="text-sm text-yellow-200 bg-gray-800 p-3 rounded whitespace-pre-wrap">
+            {problem.constraints}
+          </pre>
+        </div>
+      )}
 
       <MonacoEditor
         height="400px"
@@ -217,7 +230,7 @@ const EditorPage = () => {
         ></textarea>
 
         <button
-          onClick={()=>handleCustomRun(false)}
+          onClick={() => handleCustomRun(false)}
           className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded disabled:opacity-50"
           disabled={customRunLoading}
         >
@@ -233,6 +246,24 @@ const EditorPage = () => {
           </div>
         )}
       </div>
+      {/* Score Result */}
+      {!loading && isSubmitMode && (
+        <div className="mt-6 bg-gray-800 p-4 rounded">
+          <h2 className="text-xl font-semibold mb-2 text-white">
+            {scorePercent === 100
+              ? "✅ All test cases passed!"
+              : `⚠️ Some test cases failed (${scorePercent}% passed)`}
+          </h2>
+          <div className="w-full bg-gray-700 h-3 rounded mb-2">
+            <div
+              className={`h-3 rounded ${
+                scorePercent === 100 ? "bg-green-500" : "bg-red-500"
+              }`}
+              style={{ width: `${scorePercent}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
 
       {/* Sample Test Cases */}
       {!loading && problem.visibleTestCases?.length > 0 && (
@@ -260,7 +291,7 @@ const EditorPage = () => {
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-white">
-                      Test Case #{idx + 1}
+                      Test Case {idx + 1}
                     </span>
                     {passed === true && (
                       <span className="bg-green-600 px-2 py-1 rounded text-sm">
