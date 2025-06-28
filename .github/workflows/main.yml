@@ -1,4 +1,4 @@
-name: CI for All Services
+name: CI for All Projects
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: '18'
       - name: Install & Build Frontend
-        working-directory: task/code-platform
+        working-directory: code-platform/code-platform
         run: |
           npm install
           npm run build
@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: '18'
       - name: Install & Test Backend
-        working-directory: task/backend
+        working-directory: code-platform/backend
         run: |
           npm install
           npm test
@@ -41,8 +41,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - name: Install & Test Compiler Server
-        working-directory: task/compiler-server
+      - name: Install & Test Compiler
+        working-directory: code-platform/compiler-server
         run: |
           npm install
           npm test
