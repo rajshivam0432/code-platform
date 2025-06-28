@@ -29,7 +29,8 @@ router.post("/", async (req, res) => {
 //pushing many question 
 router.post("/push", async (req, res) => {
   try {
-    const { title, description, testCases, difficulty, tags } = req.body;
+    const { title, description, testCases, difficulty, tags, constraints } =
+      req.body;
 
     // Validate required fields
     if (
@@ -50,6 +51,7 @@ router.post("/push", async (req, res) => {
       difficulty,
       tags,
       testCases,
+      constraints: constraints || [], // optional: default to empty array
     });
 
     await problem.save();
