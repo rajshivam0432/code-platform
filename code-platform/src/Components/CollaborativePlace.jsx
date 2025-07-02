@@ -1,17 +1,20 @@
-// CollaborativeRoom.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import axios from "axios";
 import { io } from "socket.io-client";
+
+import * as Y from "yjs";
+import { MonacoBinding } from "y-monaco";
+import { WebsocketProvider } from "y-websocket";
 
 const tpl = {
   cpp: `#include <bits/stdc++.h>
 using namespace std;
 
 int main() {
-// write your code here
- return 0;
+  // write your code here
+  return 0;
 }`,
   py: `def main():
     pass
@@ -20,160 +23,102 @@ if __name__ == "__main__":
 };
 
 export default function CollaborativeRoom() {
+  /* ───────────────────────── routing & room meta ──────────────────────── */
   const { roomId } = useParams();
   const [search] = useSearchParams();
   const isHost = search.get("host") === "1";
   const navigate = useNavigate();
 
+  /* ───────────────────────── app‑level state ─────────────────────────── */
   const [lang, setLang] = useState("cpp");
-  const [code, setCode] = useState(tpl.cpp);
   const [notes, setNotes] = useState("");
   const [input, setInput] = useState("");
   const [out, setOut] = useState("");
   const [busy, setBusy] = useState(false);
   const [participants, setParticipants] = useState([]);
-  const [remoteCursors, setRemoteCursors] = useState({});
 
+  /* ───────────────────────── refs ────────────────────────────────────── */
   const sock = useRef(null);
-  const muteCode = useRef(false);
-  const muteNotes = useRef(false);
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
-  const cursorTimeouts = useRef({});
+  const yProviderRef = useRef(null);
 
-  useEffect(() => {
-    setCode(localStorage.getItem(`code-${roomId}-${lang}`) || tpl[lang]);
-    setNotes(localStorage.getItem(`notes-${roomId}`) || "");
-  }, [roomId, lang]);
+  const currentUser =
+    JSON.parse(localStorage.getItem("user"))?.username ||
+    JSON.parse(localStorage.getItem("user"))?.email ||
+    "User";
 
+  /* ───────────────────────── socket.io join / leave ──────────────────── */
   useEffect(() => {
     const s = io(import.meta.env.VITE_SOCKET_SERVER_URL);
-    const currentUser = JSON.parse(localStorage.getItem("user"));
-
     sock.current = s;
-    s.emit("join-room", {
-      roomId,
-      isHost,
-      user: {
-        name: currentUser?.username || currentUser?.email,
-      },
-    });
+
+    s.emit("join-room", { roomId, isHost, user: { name: currentUser } });
 
     s.on("room-full", () => {
       alert("Room already has 2 participants.");
-      s.disconnect();
       navigate("/");
     });
-
     s.on("session-ended", () => {
       alert("Session has ended.");
-      s.disconnect();
       navigate("/landing");
     });
-
     s.on("host-left", () => alert("Host disconnected."));
-
     s.on("room-info", ({ users }) => setParticipants(users));
 
-    s.on("code-update", (v) => {
-      if (v !== code) {
-        muteCode.current = true;
-        setCode(v);
-        setTimeout(() => (muteCode.current = false), 20);
-      }
-    });
-
-    s.on("notes-update", (v) => {
-      if (v !== notes) {
-        muteNotes.current = true;
-        setNotes(v);
-        setTimeout(() => (muteNotes.current = false), 20);
-      }
-    });
-
-    s.on("cursor-update", ({ user, position }) => {
-      setRemoteCursors((prev) => {
-        const next = { ...prev, [user]: position };
-
-        if (cursorTimeouts.current[user])
-          clearTimeout(cursorTimeouts.current[user]);
-        cursorTimeouts.current[user] = setTimeout(() => {
-          setRemoteCursors((p) => {
-            const copy = { ...p };
-            delete copy[user];
-            return copy;
-          });
-        }, 1500);
-
-        return next;
-      });
-    });
+    s.on("notes-update", (v) => setNotes(v));
 
     return () => s.disconnect();
-  }, [roomId, code, notes, isHost, navigate]);
+  }, [roomId, isHost, navigate, currentUser]);
 
-  const changeCode = (v) => {
-    setCode(v);
-    localStorage.setItem(`code-${roomId}-${lang}`, v);
-    if (sock.current && !muteCode.current)
-      sock.current.emit("code-change", { roomId, code: v });
-  };
+  /* ───────────────────────── Yjs provider (CRDT) ─────────────────────── */
+  useEffect(() => {
+    const ydoc = new Y.Doc();
 
-  const changeNotes = (v) => {
-    setNotes(v);
-    localStorage.setItem(`notes-${roomId}`, v);
-    if (sock.current && !muteNotes.current)
-      sock.current.emit("notes-change", { roomId, notes: v });
-  };
+    // <── change this URL when you deploy your own server
+    const provider = new WebsocketProvider(
+     "ws://localhost:1234",
+      roomId,
+      ydoc
+    );
 
+    provider.awareness.setLocalStateField("user", {
+      name: currentUser,
+      color: "#" + Math.floor(Math.random() * 16777215).toString(16),
+    });
+
+    yProviderRef.current = provider;
+
+    return () => provider.destroy();
+  }, [roomId, currentUser]);
+
+  /* ───────────────────────── editor mount ────────────────────────────── */
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
 
-    const user = JSON.parse(localStorage.getItem("user"))?.username || "User";
+    const yText = yProviderRef.current.doc.getText("monaco");
+    if (yText.length === 0) yText.insert(0, tpl[lang]); // first user gets template
 
-    editor.onDidChangeCursorPosition((e) => {
-      sock.current.emit("cursor-move", {
-        roomId,
-        user,
-        position: e.position,
-      });
-    });
-
-    editor.onDidChangeModelContent(() => {
-      const position = editor.getPosition();
-      sock.current.emit("cursor-move", {
-        roomId,
-        user,
-        position,
-      });
-    });
+    new MonacoBinding(
+      yText,
+      editor.getModel(),
+      new Set([editor]),
+      yProviderRef.current.awareness
+    );
   };
 
-  useEffect(() => {
-    if (!editorRef.current || !monacoRef.current) return;
-    const editor = editorRef.current;
-    const monaco = monacoRef.current;
-
-    const decorations = Object.entries(remoteCursors).map(([user, pos]) => ({
-      range: new monaco.Range(
-        pos.lineNumber,
-        pos.column,
-        pos.lineNumber,
-        pos.column
-      ),
-      options: {
-        className: "remote-cursor",
-        hoverMessage: { value: `👤 ${user}` },
-      },
-    }));
-
-    editor.deltaDecorations([], decorations);
-  }, [remoteCursors]);
+  /* ───────────────────────── misc handlers ───────────────────────────── */
+  const changeNotes = (v) => {
+    setNotes(v);
+    localStorage.setItem(`notes-${roomId}`, v);
+    sock.current?.emit("notes-change", { roomId, notes: v });
+  };
 
   const run = async () => {
     setBusy(true);
     setOut("");
+    const code = editorRef.current?.getValue() || "";
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/submit/custom`,
@@ -185,75 +130,80 @@ export default function CollaborativeRoom() {
     }
   };
 
-  const reset = () => changeCode(tpl[lang]);
-  const copy = () => navigator.clipboard.writeText(code);
+  const reset = () => {
+    const yText = yProviderRef.current?.doc.getText("monaco");
+    yText.delete(0, yText.length);
+    yText.insert(0, tpl[lang]);
+  };
+
+  const copy = () =>
+    navigator.clipboard.writeText(editorRef.current?.getValue() || "");
   const endSession = () => sock.current?.emit("end-session", roomId);
   const leaveRoom = () => navigate("/landing");
 
+  /* ───────────────────────── render ──────────────────────────────────── */
   return (
     <div className="p-4 bg-gray-900 text-white min-h-screen flex flex-col gap-4">
-      <div className="flex justify-between items-center">
+      <header className="flex justify-between">
         <h1 className="text-2xl font-bold">
           Room: <span className="text-yellow-400">{roomId}</span>
         </h1>
         <div className="flex gap-4">
-          {participants.map((user, idx) => (
-            <span key={idx} className="text-sm text-green-200">
-              👤 {user || "Guest"}
+          {participants.map((u, i) => (
+            <span key={i} className="text-sm text-green-200">
+              👤 {u || "Guest"}
             </span>
           ))}
         </div>
-      </div>
-      <div className="mb-2 flex gap-2">
-        <select
-          value={lang}
-          onChange={(e) => setLang(e.target.value)}
-          className="bg-gray-800 p-1 rounded"
-        >
-          <option value="cpp">C++</option>
-          <option value="py">Python</option>
-        </select>
-      </div>
+      </header>
 
-      <div className="flex gap-4 grow">
-        <div className="w-1/2 flex flex-col">
+      <select
+        value={lang}
+        onChange={(e) => setLang(e.target.value)}
+        className="bg-gray-800 w-max p-1 rounded mb-2"
+      >
+        <option value="cpp">C++</option>
+        <option value="py">Python</option>
+      </select>
+
+      <main className="flex gap-4 grow">
+        {/* ── CODE ───────────────────────────── */}
+        <section className="w-1/2 flex flex-col">
           <Editor
             height="100%"
             language={lang === "cpp" ? "cpp" : "python"}
             theme="vs-dark"
-            value={code}
-            onChange={changeCode}
             onMount={handleEditorDidMount}
           />
-
           <div className="mt-3 flex gap-3">
-            <button onClick={reset} className="bg-red-600 px-4 py-1 rounded">
+            <button onClick={reset} className="bg-red-600    px-4 py-1 rounded">
               Reset
             </button>
-            <button onClick={copy} className="bg-teal-600 px-4 py-1 rounded">
+            <button onClick={copy} className="bg-teal-600   px-4 py-1 rounded">
               Copy
             </button>
             <button
               onClick={endSession}
               className="bg-purple-700 px-4 py-1 rounded"
             >
-              End Session
+              End
             </button>
             <button
               onClick={leaveRoom}
-              className="bg-gray-600 px-4 py-1 rounded"
+              className="bg-gray-600   px-4 py-1 rounded"
             >
               Leave
             </button>
           </div>
-        </div>
+        </section>
 
-        <div className="w-1/2 flex flex-col gap-3">
+        {/* ── NOTES / INPUT / OUTPUT ─────────── */}
+        <section className="w-1/2 flex flex-col gap-3">
           <textarea
             value={notes}
             onChange={(e) => changeNotes(e.target.value)}
             className="flex-grow bg-gray-800 p-3 rounded border border-gray-700 resize-none"
-            placeholder="Shared notes / question…"
+            placeholder="Shared notes…"
           />
           <textarea
             value={input}
@@ -273,8 +223,8 @@ export default function CollaborativeRoom() {
               {out}
             </pre>
           )}
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
