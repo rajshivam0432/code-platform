@@ -77,7 +77,7 @@ export default function CollaborativeRoom() {
 
     // <── change this URL when you deploy your own server
     const provider = new WebsocketProvider(
-     "ws://localhost:1234",
+      "https://y-serverweb-bwckf8chd5edf7e8.centralindia-01.azurewebsites.net",
       roomId,
       ydoc
     );
