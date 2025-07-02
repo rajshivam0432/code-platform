@@ -1,0 +1,23 @@
+{
+  "name": "y-server",
+  "version": "1.0.0",
+  "description": "Yjs WebSocket server for collaborative editor",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "yjs",
+    "websocket",
+    "collaborative",
+    "editor"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.18.3",
+    "y-websocket": "^1.3.12",
+    "yjs": "^13.6.27"
+  }
+}
