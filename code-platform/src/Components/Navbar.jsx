@@ -22,7 +22,6 @@ const Navbar = () => {
   };
 
   const isEditorPage = location.pathname.startsWith("/editor/");
-
   return (
     <>
       {showToast && (
@@ -42,14 +41,12 @@ const Navbar = () => {
               Dashboards
             </a>
 
-            {isEditorPage && (
-              <button
-                onClick={handleShareLink}
-                className="bg-green-600 px-3 py-1 rounded hover:bg-green-700 text-sm"
-              >
-                🤝 Share Collaboration Link
-              </button>
-            )}
+            <a
+              href="/landing"
+              className="text-red-500 hover:text-green-200 animate-blink"
+            >
+              collaborative mode
+            </a>
 
             {isLoggedIn ? (
               <>

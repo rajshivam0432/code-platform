@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.remote-cursor {
+    border-left: 2px solid #ff0;
+    position: relative;
+}
+
+.remote-cursor::after {
+    content: attr(data-user);
+    position: absolute;
+    top: -1.2em;
+    left: 0;
+    background: #222;
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+}   

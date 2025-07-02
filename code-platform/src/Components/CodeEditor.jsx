@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
-import { io } from "socket.io-client";
+
 
 // Custom markdown renderer for AI Review
 const markdownComponents = {
@@ -69,8 +69,7 @@ const EditorPage = () => {
   const [customOutput, setCustomOutput] = useState("");
   const [customRunLoading, setCustomRunLoading] = useState(false);
 
-  const socketRef = useRef(null);
-  const suppressRef = useRef(false);
+
 
   // Load problem
   useEffect(() => {
@@ -89,36 +88,11 @@ const EditorPage = () => {
   }, [id]);
 
   // Socket.IO for real-time collaboration
-  useEffect(() => {
-    const socket = io(import.meta.env.VITE_SOCKET_SERVER_URL, {
-      transports: ["polling"],
-    });
-
-    socketRef.current = socket;
-    socket.emit("join-room", id);
-
-    socket.on("code-update", (newCode) => {
-      if (newCode !== code) {
-        suppressRef.current = true;
-        setCode(newCode);
-        setTimeout(() => {
-          suppressRef.current = false;
-        }, 50);
-      }
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [id, code]);
-
+  
   const handleCodeChange = (value) => {
     setCode(value);
     localStorage.setItem(`code-${id}`, value);
 
-    if (socketRef.current && !suppressRef.current) {
-      socketRef.current.emit("code-change", { roomId: id, code: value });
-    }
   };
 
   const handleRunOrSubmit = async (submit) => {
