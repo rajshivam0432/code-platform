@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useMemo, useState } from "react";
+import React, { useEffect, useRef,useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import axios from "axios";
 import { io } from "socket.io-client";
+
 import * as Y from "yjs";
 import { MonacoBinding } from "y-monaco";
 import { WebsocketProvider } from "y-websocket";
@@ -42,6 +43,7 @@ export default function CollaborativeRoom() {
   const monacoRef = useRef(null);
   const yProviderRef = useRef(null);
 
+  // ✅ Generate stable unique ID for user
   if (!localStorage.getItem("userId")) {
     localStorage.setItem("userId", Math.random().toString(36).substring(2));
   }
@@ -80,16 +82,22 @@ export default function CollaborativeRoom() {
   useEffect(() => {
     const ydoc = new Y.Doc();
     const provider = new WebsocketProvider(
-      import.meta.env.VITE_YJS_SERVER_URL,
+      "https://y-serverweb-bwckf8chd5edf7e8.centralindia-01.azurewebsites.net",
       roomId,
       ydoc
     );
 
+    // ✅ Set unique awareness user info
     provider.awareness.setLocalStateField("user", {
       id: currentUser.id,
       name: currentUser.name,
       color: "#" + Math.floor(Math.random() * 16777215).toString(16),
     });
+
+    // Optional: debug awareness changes
+    // provider.awareness.on("change", (changes) => {
+    //   console.log("Awareness change:", changes);
+    // });
 
     yProviderRef.current = provider;
 
@@ -101,6 +109,10 @@ export default function CollaborativeRoom() {
     monacoRef.current = monaco;
 
     const yText = yProviderRef.current.doc.getText("monaco");
+
+    // ✅ Add boilerplate only if:
+    // - it's empty AND
+    // - this user is the first peer (no one else is connected yet)
     const awareness = yProviderRef.current.awareness;
     const numberOfPeers = awareness.getStates().size;
 
@@ -110,20 +122,20 @@ export default function CollaborativeRoom() {
 
     new MonacoBinding(yText, editor.getModel(), new Set([editor]), awareness);
   };
+  
 
   const changeNotes = (v) => {
     setNotes(v);
     localStorage.setItem(`notes-${roomId}`, v);
     sock.current?.emit("notes-change", { roomId, notes: v });
   };
-
   const copyRoomLink = () => {
     const baseUrl = window.location.origin + "/room/" + roomId;
     navigator.clipboard.writeText(baseUrl).then(() => {
       toast.success("Room link copied to clipboard!");
     });
   };
-
+  
   const run = async () => {
     setBusy(true);
     setOut("");
@@ -154,79 +166,76 @@ export default function CollaborativeRoom() {
 
   return (
     <div className="p-4 bg-gray-900 text-white min-h-screen flex flex-col gap-4">
-      <ToastContainer />
-      <header className="flex flex-wrap justify-between items-center gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">
-            Room: <span className="text-yellow-400">{roomId}</span>
-          </h1>
-          <div className="text-sm text-green-300 flex gap-3 mt-1">
-            {participants.map((u, i) => (
-              <span key={i}>👤 {u || "Guest"}</span>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value)}
-            className="bg-gray-800 p-2 rounded text-white"
-          >
-            <option value="cpp">C++</option>
-            <option value="py">Python</option>
-          </select>
-          <button
-            onClick={copyRoomLink}
-            className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded"
-          >
-            🔗 Share Room Link
-          </button>
-        </div>
-      </header>
+      <header className="flex justify-between">
+        <h1 className="text-2xl font-bold">
+          Room: <span className="text-yellow-400">{roomId}</span>
+        </h1>
 
-      <main className="flex flex-col lg:flex-row gap-4 grow">
-        <section className="lg:w-1/2 flex flex-col">
+        <div className="flex gap-4">
+          {participants.map((u, i) => (
+            <span key={i} className="text-sm text-green-200">
+              👤 {u || "Guest"}
+            </span>
+          ))}
+        </div>
+        <button
+          onClick={copyRoomLink}
+          className="bg-blue-600 px-4 py-1 rounded text-white"
+        >
+          Share Room Link
+        </button>
+      </header>
+      
+      <select
+        value={lang}
+        onChange={(e) => setLang(e.target.value)}
+        className="bg-gray-800 w-max p-1 rounded mb-2"
+      >
+        <option value="cpp">C++</option>
+        <option value="py">Python</option>
+      </select>
+
+      <main className="flex gap-4 grow">
+        <section className="w-1/2 flex flex-col">
           <Editor
-            height="60vh"
+            height="100%"
             language={lang === "cpp" ? "cpp" : "python"}
             theme="vs-dark"
             onMount={handleEditorDidMount}
           />
-          <div className="flex gap-3 mt-3 flex-wrap">
-            <button onClick={reset} className="bg-red-600 px-4 py-2 rounded">
+          <div className="mt-3 flex gap-3">
+            <button onClick={reset} className="bg-red-600 px-4 py-1 rounded">
               Reset
             </button>
-            <button onClick={copy} className="bg-teal-600 px-4 py-2 rounded">
-              Copy Code
+            <button onClick={copy} className="bg-teal-600 px-4 py-1 rounded">
+              Copy
             </button>
             <button
               onClick={endSession}
-              className="bg-purple-700 px-4 py-2 rounded"
+              className="bg-purple-700 px-4 py-1 rounded"
             >
-              End Session
+              End
             </button>
             <button
               onClick={leaveRoom}
-              className="bg-gray-700 px-4 py-2 rounded"
+              className="bg-gray-600 px-4 py-1 rounded"
             >
-              Leave Room
+              Leave
             </button>
           </div>
         </section>
 
-        <section className="lg:w-1/2 flex flex-col gap-3">
+        <section className="w-1/2 flex flex-col gap-3">
           <textarea
             ref={notesRef}
             value={notes}
             onChange={(e) => changeNotes(e.target.value)}
-            className="h-40 bg-gray-800 p-3 rounded border border-gray-700 resize-none"
-            placeholder="Shared notes..."
+            className="flex-grow bg-gray-800 p-3 rounded border border-gray-700 resize-none"
+            placeholder="Shared notes…"
           />
-          <button
-            onClick={copyNotes}
-            className="bg-teal-600 px-4 py-2 rounded w-fit"
-          >
-            Copy Notes
+
+          <button onClick={copyNotes} className="bg-teal-600 px-4 py-1 rounded">
+            Copy
           </button>
 
           <textarea
@@ -235,15 +244,13 @@ export default function CollaborativeRoom() {
             className="h-24 bg-gray-800 p-3 rounded border border-gray-700 resize-none"
             placeholder="Custom input"
           />
-
           <button
             onClick={run}
             disabled={busy}
-            className="bg-yellow-600 hover:bg-yellow-700 rounded py-2 px-4 w-fit disabled:opacity-60"
+            className="bg-yellow-600 hover:bg-yellow-700 rounded py-2 disabled:opacity-50"
           >
-            {busy ? "Running..." : "Run Code"}
+            {busy ? "Running…" : "Run"}
           </button>
-
           {out && (
             <pre className="bg-black text-green-400 text-sm p-3 rounded border border-gray-700 whitespace-pre-wrap overflow-auto">
               {out}
