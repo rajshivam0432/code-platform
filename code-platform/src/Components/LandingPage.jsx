@@ -23,7 +23,7 @@ export default function LandingPage() {
         onClick={createSession}
         className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded text-lg"
       >
-        ➕ Start New Session
+        ➕ Start New Session
       </button>
 
       <div className="flex gap-2 mt-6">

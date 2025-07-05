@@ -63,7 +63,7 @@ const Navbar = () => {
             ) : (
               <>
                 <a
-                  href="/"
+                  href="/signin"
                   className="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700"
                 >
                   Sign In

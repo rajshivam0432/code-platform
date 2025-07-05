@@ -1,11 +1,11 @@
+// Unchanged imports
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import ReactMarkdown from "react-markdown";
 
-
-// Custom markdown renderer for AI Review
+// Markdown styles
 const markdownComponents = {
   h1: (props) => (
     <h1 className="text-2xl font-bold text-purple-400 my-4" {...props} />
@@ -26,8 +26,7 @@ const markdownComponents = {
       if (match) {
         return (
           <p className="text-white leading-relaxed my-2">
-            <strong>{match[1]}</strong>
-            {match[3] ? ` ${match[3]}` : ""}
+            <strong>{match[1]}</strong> {match[3]}
           </p>
         );
       }
@@ -69,9 +68,6 @@ const EditorPage = () => {
   const [customOutput, setCustomOutput] = useState("");
   const [customRunLoading, setCustomRunLoading] = useState(false);
 
-
-
-  // Load problem
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_BASE_URL}/api/problems/${id}`, {
@@ -81,18 +77,14 @@ const EditorPage = () => {
       .catch((err) => console.error(err));
   }, [id]);
 
-  // Load code from localStorage
   useEffect(() => {
     const saved = localStorage.getItem(`code-${id}`);
     setCode(saved || DEFAULT_CODE);
   }, [id]);
 
-  // Socket.IO for real-time collaboration
-  
   const handleCodeChange = (value) => {
     setCode(value);
     localStorage.setItem(`code-${id}`, value);
-
   };
 
   const handleRunOrSubmit = async (submit) => {
@@ -104,12 +96,7 @@ const EditorPage = () => {
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/submit`,
-        {
-          code,
-          language: "cpp",
-          problemId: id,
-          isSubmit: submit,
-        },
+        { code, language: "cpp", problemId: id, isSubmit: submit },
         { withCredentials: true }
       );
       setResult(res.data.results);
@@ -128,12 +115,7 @@ const EditorPage = () => {
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/submit/custom`,
-        {
-          code,
-          language: "cpp",
-          problemId: id,
-          input: customInput,
-        },
+        { code, language: "cpp", problemId: id, input: customInput },
         { withCredentials: true }
       );
       setCustomOutput(res.data.output || "No output.");
@@ -148,6 +130,7 @@ const EditorPage = () => {
   const handleAIReview = async () => {
     setAiLoading(true);
     setAiReview("");
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/api/ai-review`,
@@ -156,8 +139,8 @@ const EditorPage = () => {
       );
       setAiReview(res.data.review || "No review generated.");
     } catch (err) {
-      setAiReview("Failed to get AI review.");
       console.error(err);
+      setAiReview("Failed to get AI review.");
     } finally {
       setAiLoading(false);
     }
@@ -168,19 +151,15 @@ const EditorPage = () => {
     localStorage.setItem(`code-${id}`, DEFAULT_CODE);
   };
 
-  if (!problem) {
-    return <p className="text-white p-4">Loading...</p>;
-  }
+  if (!problem) return <p className="text-white p-4">Loading...</p>;
 
   return (
-    <div className="p-4 bg-gray-900 text-white min-h-screen">
-      <h1 className="text-2xl font-bold mb-4">{problem.title}</h1>
-      <p className="mb-4 text-gray-300 whitespace-pre-wrap">
-        {problem.description}
-      </p>
+    <div className="p-4 bg-gray-900 text-white min-h-screen space-y-6">
+      <h1 className="text-2xl font-bold">{problem.title}</h1>
+      <p className="text-gray-300 whitespace-pre-wrap">{problem.description}</p>
 
       {problem.constraints && (
-        <div className="mb-6">
+        <div>
           <h2 className="text-lg font-semibold text-yellow-400 mb-1">
             Constraints
           </h2>
@@ -198,7 +177,7 @@ const EditorPage = () => {
         onChange={handleCodeChange}
       />
 
-      <div className="flex flex-wrap gap-4 mt-6">
+      <div className="flex flex-wrap gap-4">
         <button
           onClick={() => handleRunOrSubmit(false)}
           className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 rounded disabled:opacity-50"
@@ -228,15 +207,15 @@ const EditorPage = () => {
         </button>
       </div>
 
-      <div className="mt-6 bg-gray-800 p-4 rounded space-y-4">
-        <h2 className="text-lg font-semibold text-white">Custom Input</h2>
+      {/* Custom Run */}
+      <div className="bg-gray-800 p-4 rounded space-y-4">
+        <h2 className="text-lg font-semibold">Custom Input</h2>
         <textarea
           value={customInput}
           onChange={(e) => setCustomInput(e.target.value)}
           className="w-full h-32 bg-gray-900 text-white p-3 rounded border border-gray-700 resize-none"
           placeholder="Enter custom input here..."
-        ></textarea>
-
+        />
         <button
           onClick={handleCustomRun}
           className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded disabled:opacity-50"
@@ -244,10 +223,9 @@ const EditorPage = () => {
         >
           {customRunLoading ? "Running..." : "Run with Custom Input"}
         </button>
-
         {customOutput && (
-          <div className="mt-4">
-            <h3 className="text-md font-semibold text-white mb-2">Output:</h3>
+          <div>
+            <h3 className="text-md font-semibold mb-2">Output:</h3>
             <pre className="bg-black text-green-400 text-sm p-3 rounded border border-gray-700 whitespace-pre-wrap overflow-auto">
               {customOutput}
             </pre>
@@ -255,9 +233,10 @@ const EditorPage = () => {
         )}
       </div>
 
+      {/* Score */}
       {!loading && isSubmitMode && (
-        <div className="mt-6 bg-gray-800 p-4 rounded">
-          <h2 className="text-xl font-semibold mb-2 text-white">
+        <div className="bg-gray-800 p-4 rounded">
+          <h2 className="text-xl font-semibold mb-2">
             {scorePercent === 100
               ? "✅ All test cases passed!"
               : `⚠️ Some test cases failed (${scorePercent}% passed)`}
@@ -268,14 +247,15 @@ const EditorPage = () => {
                 scorePercent === 100 ? "bg-green-500" : "bg-red-500"
               }`}
               style={{ width: `${scorePercent}%` }}
-            ></div>
+            />
           </div>
         </div>
       )}
 
+      {/* Test Cases */}
       {!loading && problem.visibleTestCases?.length > 0 && (
-        <div className="mt-6 bg-gray-800 p-4 rounded">
-          <h2 className="text-lg font-semibold mb-4">Sample Test Cases</h2>
+        <div className="bg-gray-800 p-4 rounded space-y-4">
+          <h2 className="text-lg font-semibold">Sample Test Cases</h2>
           <div className="flex flex-wrap gap-4">
             {problem.visibleTestCases.map((tc, idx) => {
               const testResult = result.find(
@@ -288,18 +268,16 @@ const EditorPage = () => {
               return (
                 <div
                   key={idx}
-                  className={`w-full md:w-[48%] bg-gray-700 rounded p-4 space-y-2 border ${
+                  className={`w-full md:w-[48%] p-4 rounded border ${
                     passed === true
                       ? "border-green-500"
                       : passed === false
                       ? "border-red-500"
                       : "border-gray-600"
-                  }`}
+                  } bg-gray-700 space-y-2`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-white">
-                      Test Case {idx + 1}
-                    </span>
+                    <span className="font-semibold">Test Case {idx + 1}</span>
                     {passed === true && (
                       <span className="bg-green-600 px-2 py-1 rounded text-sm">
                         Passed
@@ -323,7 +301,7 @@ const EditorPage = () => {
                     </pre>
                   )}
                   {error && (
-                    <pre className="text-sm text-red-400 break-all whitespace-pre-wrap overflow-x-auto">
+                    <pre className="text-sm text-red-400 whitespace-pre-wrap overflow-auto">
                       <strong>Error:</strong> {error}
                     </pre>
                   )}
@@ -334,8 +312,9 @@ const EditorPage = () => {
         </div>
       )}
 
+      {/* AI Review */}
       {aiReview && (
-        <div className="mt-6 bg-gray-900 p-6 rounded-xl border border-purple-700 shadow-lg">
+        <div className="bg-gray-900 p-6 rounded-xl border border-purple-700 shadow-lg">
           <h2 className="text-2xl font-bold mb-6 text-purple-400">
             💡 AI Code Review
           </h2>

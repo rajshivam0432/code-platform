@@ -22,7 +22,7 @@ const SignIn = () => {
         `${import.meta.env.VITE_API_BASE_URL}/api/auth/signin`,
         form,
         {
-          withCredentials: true, 
+          withCredentials: true,
           headers: {
             "Content-Type": "application/json",
           },
@@ -34,7 +34,7 @@ const SignIn = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      login(user); 
+      login(user);
       navigate("/problem-dashboard");
     } catch (err) {
       console.error(err);
@@ -43,42 +43,63 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          Sign In
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <h2 className="text-3xl font-extrabold mb-6 text-center text-gray-800">
+          Welcome Back 👋
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full p-3 border rounded outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+        <p className="text-gray-600 mb-6 text-center">
+          Sign in to continue solving coding problems on{" "}
+          <span className="font-bold text-indigo-600">ByteBattle</span>
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={handleChange}
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              placeholder="••••••••"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              required
+            />
+          </div>
+
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition"
+            className="w-full bg-indigo-600 text-white font-semibold p-3 rounded-lg hover:bg-indigo-700 transition duration-200"
           >
             Sign In
           </button>
         </form>
-        
-        <p className="text-sm mt-4 text-center text-gray-700">
-          Don't have an account?{" "}
-          <a href="/signup" className="text-blue-600 hover:underline">
+
+        <p className="text-sm mt-6 text-center text-gray-600">
+          Don’t have an account?{" "}
+          <a
+            href="/signup"
+            className="text-indigo-600 font-semibold hover:underline"
+          >
             Sign Up
           </a>
         </p>
